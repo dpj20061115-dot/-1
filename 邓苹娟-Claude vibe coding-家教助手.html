@@ -1,0 +1,3928 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家教助手 - Tutoring Assistant</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+</script>
+<style>
+/* ========== CSS Variables & Reset ========== */
+:root {
+  --primary: #4a6cf7;
+  --primary-light: #e8edfe;
+  --primary-dark: #3451db;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --transition: 0.2s ease;
+  --sidebar-w: 220px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ========== Layout ========== */
+.app-container { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w);
+  background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform var(--transition);
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+}
+
+.sidebar-header h1 { font-size: 1.25rem; font-weight: 700; }
+.sidebar-header .subtitle { font-size: 0.75rem; opacity: 0.6; margin-top: 4px; }
+
+.sidebar-nav { flex: 1; padding: 8px 0; }
+
+.sidebar-nav .nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+  transition: all var(--transition);
+  border-left: 3px solid transparent;
+  user-select: none;
+}
+
+.sidebar-nav .nav-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.sidebar-nav .nav-item.active {
+  background: rgba(74,108,247,0.3);
+  color: #fff;
+  border-left-color: var(--primary);
+  font-weight: 600;
+}
+
+.sidebar-nav .nav-icon { font-size: 1.2rem; width: 24px; text-align: center; flex-shrink: 0; }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.7rem;
+  opacity: 0.4;
+  text-align: center;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  padding: 20px 24px;
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* ========== Tab Panels ========== */
+.tab-panel { display: none; animation: fadeIn 0.25s ease; }
+.tab-panel.active { display: block; }
+
+/* Sub-tabs (within review module) */
+.sub-tabs {
+  display: flex; gap: 2px; flex-wrap: wrap;
+  background: #f1f5f9; border-radius: 8px; padding: 4px;
+  margin-bottom: 0;
+}
+
+.sub-tab {
+  padding: 8px 14px; cursor: pointer; border-radius: 6px;
+  font-size: 0.82rem; font-weight: 500; color: var(--text-secondary);
+  transition: all var(--transition); user-select: none;
+  white-space: nowrap;
+}
+
+.sub-tab:hover { background: #e2e8f0; color: var(--text); }
+.sub-tab.active { background: var(--primary); color: #fff; }
+
+.review-subpanel { display: none; animation: fadeIn 0.25s ease; }
+.review-subpanel.active { display: block; }
+
+/* Review card styles */
+.review-card { border-left: 4px solid var(--primary); }
+.review-card.quick { border-left-color: var(--warning); }
+
+.review-rating-row {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  align-items: center; margin: 6px 0;
+}
+
+.review-rating-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.85rem;
+}
+
+.review-rating-item .label { color: var(--text-secondary); font-size: 0.78rem; }
+
+/* Review plan day card */
+.plan-day {
+  background: #f8fafc; border-radius: 8px; padding: 12px;
+  margin-bottom: 8px; border: 1px solid var(--border);
+}
+
+.plan-day-header {
+  font-weight: 600; font-size: 0.9rem;
+  margin-bottom: 8px; display: flex;
+  justify-content: space-between; align-items: center;
+}
+
+.plan-task {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 0; border-bottom: 1px dashed #e2e8f0;
+  font-size: 0.85rem;
+}
+
+.plan-task:last-child { border-bottom: none; }
+
+.plan-task .task-type {
+  padding: 2px 6px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+}
+
+.task-type.review { background: #dbeafe; color: #2563eb; }
+.task-type.practice { background: #fef3c7; color: #d97706; }
+.task-type.preview { background: #d1fae5; color: #059669; }
+
+/* Habit streak display */
+.streak-display {
+  display: flex; align-items: center; gap: 20px;
+  flex-wrap: wrap; margin: 12px 0;
+}
+
+.streak-item {
+  text-align: center; padding: 16px;
+  background: #f8fafc; border-radius: 12px;
+  min-width: 100px;
+}
+
+.streak-item .streak-num {
+  font-size: 2rem; font-weight: 700; color: var(--primary);
+}
+
+.streak-item.fire .streak-num { color: #f59e0b; }
+
+.streak-item .streak-label {
+  font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;
+}
+
+/* Growth report styles */
+.report-section { margin-bottom: 16px; }
+.report-section h4 {
+  font-size: 0.95rem; margin-bottom: 8px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ========== Cards ========== */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.card-header h2 { font-size: 1.15rem; font-weight: 600; }
+.card-header h3 { font-size: 1rem; font-weight: 600; }
+
+/* ========== Buttons ========== */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  border: none; border-radius: var(--radius-sm);
+  font-size: 0.875rem; font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #059669; }
+
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-warning:hover { background: #d97706; }
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+
+.btn-outline {
+  background: transparent; color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover { background: var(--primary-light); }
+
+.btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+.btn-xs { padding: 3px 7px; font-size: 0.7rem; border-radius: 4px; }
+
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ========== Forms ========== */
+.form-group { margin-bottom: 14px; }
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem; font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color var(--transition);
+  background: #fff;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(74,108,247,0.1);
+}
+
+select.form-control { appearance: auto; }
+textarea.form-control { resize: vertical; min-height: 70px; }
+
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.form-row .form-group { flex: 1; min-width: 150px; }
+
+/* ========== Tables ========== */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+table th, table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: #f8fafc;
+  position: sticky; top: 0;
+  white-space: nowrap;
+}
+
+table tbody tr:hover { background: #f8fafc; }
+
+/* ========== Stats Grid ========== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-card .stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.stat-card.warning .stat-value { color: var(--warning); }
+.stat-card.success .stat-value { color: var(--success); }
+.stat-card.danger .stat-value { color: var(--danger); }
+
+/* ========== Stars ========== */
+.star-rating { display: inline-flex; gap: 2px; cursor: pointer; }
+.star-rating .star { font-size: 1.2rem; color: #d1d5db; transition: color var(--transition); }
+.star-rating .star.filled { color: #f59e0b; }
+.star-rating .star:hover { color: #f59e0b; }
+
+/* ========== Tags / Badges ========== */
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-primary { background: var(--primary-light); color: var(--primary); }
+.badge-success { background: var(--success-light); color: var(--success); }
+.badge-warning { background: var(--warning-light); color: var(--warning); }
+.badge-danger { background: var(--danger-light); color: var(--danger); }
+
+/* ========== Toast ========== */
+.toast-container {
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+  max-width: 360px;
+  box-shadow: var(--shadow-md);
+}
+
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.info { background: var(--primary); }
+
+@keyframes slideIn { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ========== Modal ========== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+
+.modal-header h3 { font-size: 1.1rem; }
+
+.modal-close {
+  background: none; border: none;
+  font-size: 1.5rem; cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0 4px; line-height: 1;
+}
+
+.modal-body { padding: 20px; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ========== Chart containers ========== */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  max-height: 350px;
+  margin: 12px 0;
+}
+
+.chart-wrap canvas { width: 100% !important; }
+
+/* ========== Empty State ========== */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-state p { font-size: 0.9rem; }
+
+/* ========== Section divider ========== */
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 20px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ========== Print styles ========== */
+@media print {
+  .sidebar, .btn, .modal-overlay, .toast-container, .no-print { display: none !important; }
+  .main-content { margin-left: 0 !important; padding: 0 !important; }
+  .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0;
+  }
+
+  .sidebar-header { display: none; }
+  .sidebar-footer { display: none; }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sidebar-nav .nav-item {
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    font-size: 0.7rem;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .sidebar-nav .nav-item.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--primary);
+  }
+
+  .sidebar-nav .nav-icon { font-size: 1.1rem; }
+
+  .main-content {
+    margin-left: 0;
+    padding: 12px;
+  }
+
+  .app-container { flex-direction: column; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .form-row { flex-direction: column; }
+  .form-row .form-group { min-width: 100%; }
+
+  .modal { max-width: 95vw; max-height: 90vh; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .btn-group { flex-direction: column; }
+  .card-header { flex-direction: column; align-items: flex-start; }
+  table { font-size: 0.75rem; }
+  table th, table td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+<!-- ========== SIDEBAR ========== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>📚 家教助手</h1>
+    <div class="subtitle">Tutoring Assistant</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav">
+    <div class="nav-item active" data-tab="students"><span class="nav-icon">👥</span>学生管理</div>
+    <div class="nav-item" data-tab="exams"><span class="nav-icon">📊</span>成绩分析</div>
+    <div class="nav-item" data-tab="classroom"><span class="nav-icon">🎓</span>课堂记录</div>
+    <div class="nav-item" data-tab="billing"><span class="nav-icon">💰</span>课时与收费</div>
+    <div class="nav-item" data-tab="datamgmt"><span class="nav-icon">⚙️</span>数据管理</div>
+  </nav>
+  <div class="sidebar-footer">v1.0 · 数据存于本地浏览器</div>
+</aside>
+
+<!-- ========== MAIN CONTENT ========== -->
+<main class="main-content" id="mainContent">
+
+<!-- ===== 1. 学生管理 ===== -->
+<section class="tab-panel active" id="tab-students">
+  <div class="card">
+    <div class="card-header">
+      <h2>👥 学生列表</h2>
+      <div class="btn-group">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile_students').click()">📥 导入学生</button>
+        <input type="file" id="importFile_students" accept=".json" style="display:none" onchange="importStudents(event)">
+        <button class="btn btn-primary" onclick="showStudentForm()">＋ 添加学生</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>姓名</th><th>年级</th><th>科目</th><th>课时单价(元/时)</th><th>状态</th><th>备注</th><th style="width:140px">操作</th></tr></thead>
+        <tbody id="studentTableBody"><tr><td colspan="7" class="empty-state"><div class="empty-icon">📭</div><p>还没有学生，点击"添加学生"开始</p></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 2. 成绩分析 ===== -->
+<section class="tab-panel" id="tab-exams">
+  <div class="card">
+    <div class="card-header">
+      <h2>📊 成绩记录与分析</h2>
+      <div class="btn-group">
+        <select class="form-control" id="examStudentFilter" onchange="renderExamModule()" style="width:auto">
+          <option value="">-- 选择学生 --</option>
+        </select>
+        <button class="btn btn-primary" onclick="showExamForm()">＋ 添加成绩</button>
+      </div>
+    </div>
+    <div id="examStatsArea"></div>
+    <div class="chart-wrap"><canvas id="gradeChart"></canvas></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>考试名称</th><th>日期</th><th>科目</th><th>分数</th><th>满分</th><th>得分率</th><th>等级</th><th style="width:80px">操作</th></tr></thead>
+        <tbody id="examTableBody"><tr><td colspan="7" class="empty-state"><p>请先选择学生</p></td></tr></tbody>
+      </table>
+    </div>
+    <!-- TODO: 调用 DeepSeek API 分析薄弱点 -->
+    <div style="margin-top:12px; text-align:right">
+      <button class="btn btn-outline btn-sm" disabled title="功能预留">🤖 AI 提分建议（待接入）</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3. 课堂记录 ===== -->
+<section class="tab-panel" id="tab-classroom">
+  <div class="card">
+    <div class="card-header">
+      <h2>🎓 课堂记录</h2>
+      <div class="btn-group">
+        <select class="form-control" id="crStudentFilter" onchange="renderClassroomModule()" style="width:auto">
+          <option value="">-- 选择学生 --</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile_classroom').click()">📥 导入课堂记录</button>
+        <input type="file" id="importFile_classroom" accept=".json" style="display:none" onchange="importClassroomRecords(event)">
+        <button class="btn btn-primary" onclick="showClassroomForm()">＋ 新建课堂记录</button>
+      </div>
+    </div>
+    <div id="classroomRecordsList"></div>
+  </div>
+</section>
+
+<!-- ===== 4. 课时与收费 ===== -->
+<section class="tab-panel" id="tab-billing">
+  <div class="card">
+    <div class="card-header">
+      <h2>💰 课时记录与收费管理</h2>
+      <div class="btn-group">
+        <select class="form-control" id="billingStudentFilter" onchange="renderBillingModule()" style="width:auto">
+          <option value="">-- 全部学生 --</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile_sessions').click()">📥 导入课时记录</button>
+        <input type="file" id="importFile_sessions" accept=".json" style="display:none" onchange="importSessions(event)">
+        <button class="btn btn-primary" onclick="showSessionForm()">＋ 添加上课记录</button>
+      </div>
+    </div>
+    <div id="billingStatsArea"></div>
+    <div id="unpaidAlert" style="margin-bottom:14px"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>学生</th><th>日期</th><th>时长(分)</th><th>次数</th><th>内容</th><th>应收(元)</th><th>实收(元)</th><th>已收款</th><th style="width:100px">操作</th></tr></thead>
+        <tbody id="sessionTableBody"><tr><td colspan="9" class="empty-state"><p>暂无上课记录</p></td></tr></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+      <button class="btn btn-success btn-sm" onclick="batchMarkPaid()">✅ 批量标记已收款</button>
+      <span style="font-size:0.8rem;color:var(--text-secondary)">日期筛选：</span>
+      <input type="date" class="form-control" id="billingDateFrom" style="width:auto" onchange="renderBillingModule()">
+      <span style="color:var(--text-secondary)">至</span>
+      <input type="date" class="form-control" id="billingDateTo" style="width:auto" onchange="renderBillingModule()">
+      <button class="btn btn-outline btn-sm" onclick="exportBillingReport()">📋 导出收费清单</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5. 数据管理 ===== -->
+<section class="tab-panel" id="tab-datamgmt">
+  <div class="card">
+    <div class="card-header"><h2>⚙️ 数据管理</h2></div>
+    <p style="color:var(--text-secondary);margin-bottom:16px">所有数据存储在浏览器 localStorage 中。建议定期导出备份。</p>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="exportAllData()">📤 导出数据 (.json)</button>
+      <button class="btn btn-outline" onclick="document.getElementById('importFileInput').click()">📥 导入数据 (.json)</button>
+      <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importAllData(event)">
+      <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空所有数据</button>
+    </div>
+    <div style="margin-top:16px; padding:12px; background:var(--warning-light); border-radius:var(--radius-sm); font-size:0.85rem">
+      <strong>⚠️ 注意：</strong>清空数据不可恢复，请先导出备份。
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- ========== MODAL OVERLAY ========== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <h3 id="modalTitle">Modal</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- ========== TOAST CONTAINER ========== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============================================================
+//  DATA LAYER
+// ============================================================
+const STORAGE_KEY = 'tutor_assistant_v1';
+
+const defaultData = {
+  students: [],
+  exams: [],
+  classroomRecords: [],
+  sessions: []
+};
+
+let appData = JSON.parse(JSON.stringify(defaultData));
+let gradeChartInstance = null;
+
+// ============================================================
+//  UTILITIES
+// ============================================================
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+}
+
+function todayStr() {
+  return fmtDate(new Date());
+}
+
+function getStudent(id) {
+  return appData.students.find(s => s.id === id);
+}
+
+function getStudentName(id) {
+  const s = getStudent(id);
+  return s ? s.name : '(未知)';
+}
+
+function getStarsHTML(level) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += `<span class="star${i <= level ? ' filled' : ''}">★</span>`;
+  }
+  return html;
+}
+
+function ratePercent(score, total) {
+  if (!total || total === 0) return 0;
+  return Math.round((score / total) * 10000) / 100;
+}
+
+// ============================================================
+//  LOCAL STORAGE
+// ============================================================
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  } catch(e) {
+    showToast('存储空间不足，请清理部分数据或导出备份', 'error');
+  }
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Deep merge with default structure to handle upgrades
+      const def = JSON.parse(JSON.stringify(defaultData));
+      appData = Object.assign({}, def, parsed);
+      // Ensure arrays exist
+      ['students','exams','classroomRecords','sessions'].forEach(key => {
+        if (!Array.isArray(appData[key])) appData[key] = def[key] || [];
+      });
+    }
+  } catch(e) {
+    showToast('数据读取异常，已重置为默认数据', 'error');
+    appData = JSON.parse(JSON.stringify(defaultData));
+  }
+}
+
+function exportAllData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '家教助手_数据备份_' + todayStr() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据导出成功', 'success');
+}
+
+function importAllData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.students || !imported.exams) {
+        throw new Error('数据格式不正确');
+      }
+      if (!confirm('确认导入数据？当前数据将被覆盖。')) return;
+      appData = Object.assign({}, JSON.parse(JSON.stringify(defaultData)), imported);
+      saveData();
+      refreshAll();
+      showToast('数据导入成功', 'success');
+    } catch(ex) {
+      showToast('导入失败：文件格式不正确', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('⚠️ 确认清空所有数据？此操作不可恢复！\n\n建议先导出备份。')) return;
+  if (!confirm('再次确认：真的要清空所有数据吗？')) return;
+  appData = JSON.parse(JSON.stringify(defaultData));
+  saveData();
+  refreshAll();
+  showToast('数据已清空', 'info');
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function showToast(msg, type) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type || 'info');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; }, 2500);
+  setTimeout(() => el.remove(), 2900);
+}
+
+function showModal(title, bodyHTML, footerHTML) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHTML;
+  document.getElementById('modalFooter').innerHTML = footerHTML || '';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// Close modal on overlay click
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+
+// ============================================================
+//  TAB NAVIGATION
+// ============================================================
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const panel = document.getElementById('tab-' + tabName);
+  if (panel) panel.classList.add('active');
+
+  const navItem = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+  if (navItem) navItem.classList.add('active');
+
+  // Close any open modal
+  closeModal();
+
+  // Refresh the tab content
+  refreshTab(tabName);
+}
+
+function refreshTab(tabName) {
+  switch(tabName) {
+    case 'students': renderStudentList(); break;
+    case 'exams': renderExamModule(); break;
+    case 'classroom': renderClassroomModule(); break;
+    case 'billing': renderBillingModule(); break;
+    case 'datamgmt': break; // Nothing dynamic
+  }
+}
+
+function refreshAll() {
+  const activePanel = document.querySelector('.tab-panel.active');
+  if (activePanel) {
+    const tabName = activePanel.id.replace('tab-', '');
+    refreshTab(tabName);
+  }
+}
+
+// Sidebar click events
+document.getElementById('sidebarNav').addEventListener('click', function(e) {
+  const item = e.target.closest('.nav-item');
+  if (!item) return;
+  const tabName = item.dataset.tab;
+  if (tabName) switchTab(tabName);
+});
+
+// ============================================================
+//  STUDENT FILTER HELPERS
+// ============================================================
+function populateStudentSelect(selectId, includeEmpty, emptyLabel, activeOnly) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '';
+  if (includeEmpty !== false) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = emptyLabel || '-- 选择学生 --';
+    sel.appendChild(opt);
+  }
+  const students = activeOnly ? appData.students.filter(s => s.active !== false) : appData.students;
+  students.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name + ' (' + s.grade + ' ' + s.subject + ')' + (s.active === false ? ' [已停课]' : '');
+    sel.appendChild(opt);
+  });
+  sel.value = currentVal;
+}
+
+function populateAllStudentSelects() {
+  const selects = ['examStudentFilter','crStudentFilter'];
+  selects.forEach(id => populateStudentSelect(id, true));
+  // Billing: only active students
+  populateStudentSelect('billingStudentFilter', true, '-- 全部学生 --', true);
+}
+
+// ============================================================
+//  1. STUDENT MANAGEMENT
+// ============================================================
+function renderStudentList() {
+  const tbody = document.getElementById('studentTableBody');
+  if (!appData.students.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="empty-icon">📭</div><p>还没有学生，点击"添加学生"开始</p></td></tr>';
+    return;
+  }
+  tbody.innerHTML = appData.students.map(s => `
+    <tr style="${s.active === false ? 'opacity:0.55' : ''}">
+      <td><strong>${escHtml(s.name)}</strong></td>
+      <td>${escHtml(s.grade)}</td>
+      <td>${escHtml(s.subject)}</td>
+      <td>${s.hourlyRate || 0} 元/时</td>
+      <td>${s.active === false ? '<span class="badge" style="background:#e2e8f0;color:#94a3b8">已停课</span>' : '<span class="badge badge-success">在读</span>'}</td>
+      <td>${escHtml(s.notes || '')}</td>
+      <td>
+        <button class="btn btn-outline btn-xs" onclick="toggleStudentActive('${s.id}')">${s.active === false ? '恢复' : '停课'}</button>
+        <button class="btn btn-outline btn-xs" onclick="showStudentForm('${s.id}')">编辑</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteStudent('${s.id}')">删除</button>
+      </td>
+    </tr>
+  `).join('');
+  populateAllStudentSelects();
+}
+
+function showStudentForm(editId) {
+  const s = editId ? getStudent(editId) : null;
+  const title = s ? '编辑学生' : '添加学生';
+  const bodyHTML = `
+    <input type="hidden" id="sfId" value="${s ? s.id : ''}">
+    <div class="form-row">
+      <div class="form-group"><label>姓名 *</label><input class="form-control" id="sfName" value="${s ? escHtml(s.name) : ''}"></div>
+      <div class="form-group"><label>年级 *</label><input class="form-control" id="sfGrade" value="${s ? escHtml(s.grade) : ''}" placeholder="如：初三"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>科目 *</label><input class="form-control" id="sfSubject" value="${s ? escHtml(s.subject) : ''}" placeholder="如：数学"></div>
+      <div class="form-group"><label>课时单价 (元/小时)</label><input class="form-control" type="number" id="sfRate" value="${s ? (s.hourlyRate || '') : ''}" placeholder="如：200" min="0" step="0.01"></div>
+    </div>
+    <div class="form-group"><label>备注</label><textarea class="form-control" id="sfNotes">${s ? escHtml(s.notes || '') : ''}</textarea></div>
+    <div class="form-group"><label><input type="checkbox" id="sfActive" ${!s || s.active !== false ? 'checked' : ''}> 在读（仍在授课中）</label></div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveStudent()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal(title, bodyHTML, footerHTML);
+}
+
+function saveStudent() {
+  const id = document.getElementById('sfId').value;
+  const name = document.getElementById('sfName').value.trim();
+  const grade = document.getElementById('sfGrade').value.trim();
+  const subject = document.getElementById('sfSubject').value.trim();
+  const hourlyRate = parseFloat(document.getElementById('sfRate').value) || 0;
+  const notes = document.getElementById('sfNotes').value.trim();
+  const active = document.getElementById('sfActive').checked;
+
+  if (!name || !grade || !subject) {
+    showToast('请填写姓名、年级和科目', 'error');
+    return;
+  }
+
+  if (id) {
+    const idx = appData.students.findIndex(s => s.id === id);
+    if (idx >= 0) {
+      appData.students[idx] = { ...appData.students[idx], name, grade, subject, hourlyRate, notes, active };
+    }
+  } else {
+    appData.students.push({ id: genId(), name, grade, subject, hourlyRate, notes, active });
+  }
+
+  saveData();
+  closeModal();
+  renderStudentList();
+  showToast('学生信息已保存', 'success');
+}
+
+function toggleStudentActive(id) {
+  const s = getStudent(id);
+  if (!s) return;
+  s.active = s.active === false ? true : false;
+  saveData();
+  renderStudentList();
+  showToast(`${s.name} 已${s.active ? '恢复在读' : '标记停课'}`, 'info');
+}
+
+function deleteStudent(id) {
+  const s = getStudent(id);
+  if (!confirm(`确认删除学生"${s ? s.name : ''}"？\n该学生的所有成绩、课堂记录、课时记录等也将被删除。`)) return;
+  appData.students = appData.students.filter(s => s.id !== id);
+  appData.exams = appData.exams.filter(e => e.studentId !== id);
+  appData.classroomRecords = appData.classroomRecords.filter(c => c.studentId !== id);
+  appData.sessions = appData.sessions.filter(s => s.studentId !== id);
+  saveData();
+  renderStudentList();
+  populateAllStudentSelects();
+  showToast('学生已删除', 'info');
+}
+
+// ============================================================
+//  2. EXAM / GRADE MANAGEMENT
+// ============================================================
+function renderExamModule() {
+  const sid = document.getElementById('examStudentFilter').value;
+  populateStudentSelect('examStudentFilter', true);
+  renderExamList(sid);
+  renderExamStats(sid);
+  renderGradeChart(sid);
+}
+
+function renderExamList(sid) {
+  const tbody = document.getElementById('examTableBody');
+  let exams = sid ? appData.exams.filter(e => e.studentId === sid) : [];
+  exams.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (!sid) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>请先选择学生</p></td></tr>';
+    return;
+  }
+  if (!exams.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>暂无成绩记录</p></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = exams.map(e => {
+    const r = ratePercent(e.score, e.total);
+    const cls = r >= 85 ? 'badge-success' : r >= 60 ? 'badge-warning' : 'badge-danger';
+    const grade = (e.grade || '').trim();
+    const gCls = grade.startsWith('A') ? 'badge-success' : grade.startsWith('B') ? 'badge-primary' : grade.startsWith('C') ? 'badge-warning' : grade.startsWith('D') || grade.startsWith('E') || grade.startsWith('F') ? 'badge-danger' : '';
+    return `
+    <tr>
+      <td>${escHtml(e.name)}</td>
+      <td>${fmtDate(e.date)}</td>
+      <td>${escHtml(e.subject)}</td>
+      <td>${e.score}</td>
+      <td>${e.total}</td>
+      <td><span class="badge ${cls}">${r.toFixed(1)}%</span></td>
+      <td>${grade ? `<span class="badge ${gCls}">${grade}</span>` : '-'}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="showExamForm('${e.id}')">编辑</button> <button class="btn btn-danger btn-xs" onclick="deleteExam('${e.id}')">删除</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderExamStats(sid) {
+  const area = document.getElementById('examStatsArea');
+  if (!sid) { area.innerHTML = ''; return; }
+  const exams = appData.exams.filter(e => e.studentId === sid);
+  if (!exams.length) { area.innerHTML = ''; return; }
+
+  const rates = exams.map(e => ratePercent(e.score, e.total));
+  const avg = (rates.reduce((a,b) => a+b, 0) / rates.length).toFixed(1);
+  const max = Math.max(...rates).toFixed(1);
+  const min = Math.min(...rates).toFixed(1);
+
+  area.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${exams.length}</div><div class="stat-label">考试次数</div></div>
+      <div class="stat-card"><div class="stat-value">${avg}%</div><div class="stat-label">平均得分率</div></div>
+      <div class="stat-card success"><div class="stat-value">${max}%</div><div class="stat-label">最高得分率</div></div>
+      <div class="stat-card warning"><div class="stat-value">${min}%</div><div class="stat-label">最低得分率</div></div>
+    </div>
+  `;
+}
+
+function renderGradeChart(sid) {
+  if (gradeChartInstance) { gradeChartInstance.destroy(); gradeChartInstance = null; }
+  if (!sid) return;
+
+  const exams = appData.exams.filter(e => e.studentId === sid);
+  exams.sort((a,b) => new Date(a.date) - new Date(b.date));
+  if (exams.length < 2) return;
+
+  const labels = exams.map(e => e.name + '\n' + fmtDate(e.date) + (e.grade ? ' [' + e.grade + ']' : ''));
+  const data = exams.map(e => ratePercent(e.score, e.total));
+  const grades = exams.map(e => e.grade || '');
+
+  // Color mapping for grades
+  function gradeColor(g) {
+    if (!g) return '#4a6cf7';
+    if (g.startsWith('A')) return '#10b981';
+    if (g.startsWith('B')) return '#4a6cf7';
+    if (g.startsWith('C')) return '#f59e0b';
+    return '#ef4444';
+  }
+
+  const pointColors = grades.map(g => gradeColor(g));
+  const ctx = document.getElementById('gradeChart').getContext('2d');
+
+  gradeChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '得分率 (%)',
+        data: data,
+        borderColor: '#4a6cf7',
+        backgroundColor: 'rgba(74,108,247,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 7,
+        pointBackgroundColor: pointColors,
+        pointBorderColor: pointColors,
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const g = grades[ctx.dataIndex];
+              return '得分率: ' + ctx.raw.toFixed(1) + '%' + (g ? ' | 等级: ' + g : '');
+            }
+          }
+        }
+      },
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+      }
+    }
+  });
+}
+
+function showExamForm(editId) {
+  populateStudentSelect('_examStudent', false, '-- 选择学生 --');
+  const e = editId ? appData.exams.find(x => x.id === editId) : null;
+  const title = e ? '编辑成绩' : '添加成绩';
+  const bodyHTML = `
+    <input type="hidden" id="efId" value="${e ? e.id : ''}">
+    <div class="form-group"><label>学生 *</label><select class="form-control" id="_examStudent">${appData.students.map(s => `<option value="${s.id}" ${e && e.studentId===s.id?'selected':''}>${s.name} (${s.grade} ${s.subject})</option>`).join('')}</select></div>
+    <div class="form-row">
+      <div class="form-group"><label>考试名称 *</label><input class="form-control" id="efName" value="${e ? escHtml(e.name) : ''}" placeholder="如：期中考试"></div>
+      <div class="form-group"><label>日期 *</label><input type="date" class="form-control" id="efDate" value="${e ? fmtDate(e.date) : todayStr()}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>科目</label><select class="form-control" id="efSubject">
+        <option value="">-- 选择科目 --</option>
+        ${['语文','数学','英语','物理','化学','生物','地理','政治','历史'].map(s => `<option value="${s}" ${e && e.subject===s?'selected':''}>${s}</option>`).join('')}
+      </select></div>
+      <div class="form-group"><label>分数 *</label><input type="number" class="form-control" id="efScore" value="${e ? e.score : ''}" step="0.5" min="0"></div>
+      <div class="form-group"><label>满分 *</label><select class="form-control" id="efTotal">
+        <option value="120" ${e && e.total==120?'selected':''}>120</option>
+        <option value="150" ${e && e.total==150?'selected':''}>150</option>
+      </select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>等级</label><input class="form-control" id="efGrade" value="${e ? escHtml(e.grade || '') : ''}" placeholder="如：A+、A、B+、B、C..."></div>
+    </div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveExam()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal(title, bodyHTML, footerHTML);
+}
+
+function saveExam() {
+  const id = document.getElementById('efId').value;
+  const studentId = document.getElementById('_examStudent').value;
+  const name = document.getElementById('efName').value.trim();
+  const date = document.getElementById('efDate').value;
+  const subject = document.getElementById('efSubject').value.trim();
+  const score = parseFloat(document.getElementById('efScore').value);
+  const total = parseFloat(document.getElementById('efTotal').value);
+  const grade = document.getElementById('efGrade').value;
+
+  if (!studentId || !name || !date || isNaN(score) || isNaN(total)) {
+    showToast('请填写所有必填项', 'error');
+    return;
+  }
+
+  const obj = { id: id || genId(), studentId, name, date, subject, score, total, grade };
+
+  if (id) {
+    const idx = appData.exams.findIndex(x => x.id === id);
+    if (idx >= 0) appData.exams[idx] = obj;
+  } else {
+    appData.exams.push(obj);
+  }
+
+  saveData();
+  closeModal();
+  document.getElementById('examStudentFilter').value = studentId;
+  renderExamModule();
+  showToast('成绩已保存', 'success');
+}
+
+function deleteExam(id) {
+  if (!confirm('确认删除该成绩记录？')) return;
+  appData.exams = appData.exams.filter(e => e.id !== id);
+  saveData();
+  renderExamModule();
+  showToast('成绩已删除', 'info');
+}
+
+// ============================================================
+//  3. KNOWLEDGE DIAGNOSIS
+// ============================================================
+function renderKnowledgeModule() {
+  const sid = document.getElementById('kStudentFilter').value;
+  populateStudentSelect('kStudentFilter', true);
+  renderKnowledgeTable(sid);
+  renderWeakTopics(sid);
+}
+
+function renderKnowledgeTable(sid) {
+  const tbody = document.getElementById('kTableBody');
+  if (!sid) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><p>请先选择学生</p></td></tr>';
+    return;
+  }
+  const items = appData.knowledgeMatrix.filter(k => k.studentId === sid);
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><p>暂无知识点记录，点击"添加知识点"开始诊断</p></td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(k => `
+    <tr>
+      <td>${escHtml(k.subject)}</td>
+      <td>${escHtml(k.chapter)}</td>
+      <td>${escHtml(k.topic)}</td>
+      <td><span class="star-rating" onclick="cycleMastery('${k.id}')">${getStarsHTML(k.mastery)}</span></td>
+      <td><button class="btn btn-outline btn-xs" onclick="showKnowledgeForm('${k.id}')">编辑</button> <button class="btn btn-danger btn-xs" onclick="deleteKnowledge('${k.id}')">删除</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderWeakTopics(sid) {
+  const area = document.getElementById('weakTopicsAlert');
+  if (!sid) { area.innerHTML = ''; return; }
+  const weak = appData.knowledgeMatrix.filter(k => k.studentId === sid && k.mastery <= 2);
+  if (!weak.length) {
+    area.innerHTML = '<div style="padding:10px;background:var(--success-light);border-radius:var(--radius-sm);font-size:0.85rem">✅ 所有知识点掌握度均在 3 星以上，表现良好！</div>';
+    return;
+  }
+  area.innerHTML = `<div style="padding:10px;background:var(--danger-light);border-radius:var(--radius-sm);font-size:0.85rem">
+    ⚠️ <strong>薄弱知识点（≤2星）：</strong>
+    ${weak.map(w => `<span class="badge badge-danger" style="margin:2px">${escHtml(w.chapter)} - ${escHtml(w.topic)} ${getStarsHTML(w.mastery)}</span>`).join(' ')}
+    <br><small style="color:var(--text-secondary)">建议在下次备课/复盘中优先处理以上知识点。</small>
+  </div>`;
+}
+
+function cycleMastery(kid) {
+  const k = appData.knowledgeMatrix.find(x => x.id === kid);
+  if (!k) return;
+  k.mastery = k.mastery >= 5 ? 1 : k.mastery + 1;
+  saveData();
+  renderKnowledgeModule();
+}
+
+function showKnowledgeForm(editId) {
+  const sid = document.getElementById('kStudentFilter').value;
+  const k = editId ? appData.knowledgeMatrix.find(x => x.id === editId) : null;
+  const title = k ? '编辑知识点' : '添加知识点';
+  const bodyHTML = `
+    <input type="hidden" id="kfId" value="${k ? k.id : ''}">
+    <div class="form-group"><label>学生 *</label><select class="form-control" id="_kStudent">${appData.students.map(s => `<option value="${s.id}" ${(k?k.studentId===s.id:sid===s.id)?'selected':''}>${s.name} (${s.grade} ${s.subject})</option>`).join('')}</select></div>
+    <div class="form-row">
+      <div class="form-group"><label>科目</label><input class="form-control" id="kfSubject" value="${k ? escHtml(k.subject) : ''}" placeholder="如：数学"></div>
+      <div class="form-group"><label>章节</label><input class="form-control" id="kfChapter" value="${k ? escHtml(k.chapter) : ''}" placeholder="如：二次函数"></div>
+    </div>
+    <div class="form-group"><label>知识点名称 *</label><input class="form-control" id="kfTopic" value="${k ? escHtml(k.topic) : ''}" placeholder="如：求顶点坐标"></div>
+    <div class="form-group"><label>掌握度 (1-5星)</label>
+      <div style="font-size:1.5rem;cursor:pointer" id="kfStars">
+        ${[1,2,3,4,5].map(i => `<span data-v="${i}" style="color:${i<=(k?k.mastery:3)?'#f59e0b':'#d1d5db'}">★</span>`).join('')}
+      </div>
+      <input type="hidden" id="kfMastery" value="${k ? k.mastery : 3}">
+    </div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveKnowledge()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal(title, bodyHTML, footerHTML);
+
+  // Bind star click in modal
+  setTimeout(() => {
+    const starContainer = document.getElementById('kfStars');
+    if (starContainer) {
+      starContainer.addEventListener('click', function(e) {
+        const star = e.target.closest('span[data-v]');
+        if (!star) return;
+        const val = parseInt(star.dataset.v);
+        document.getElementById('kfMastery').value = val;
+        starContainer.querySelectorAll('span').forEach((s, i) => {
+          s.style.color = i < val ? '#f59e0b' : '#d1d5db';
+        });
+      });
+    }
+  }, 100);
+}
+
+function saveKnowledge() {
+  const id = document.getElementById('kfId').value;
+  const studentId = document.getElementById('_kStudent').value;
+  const subject = document.getElementById('kfSubject').value.trim();
+  const chapter = document.getElementById('kfChapter').value.trim();
+  const topic = document.getElementById('kfTopic').value.trim();
+  const mastery = parseInt(document.getElementById('kfMastery').value);
+
+  if (!studentId || !topic) {
+    showToast('请选择学生并填写知识点名称', 'error');
+    return;
+  }
+
+  const obj = { id: id || genId(), studentId, subject, chapter, topic, mastery };
+
+  if (id) {
+    const idx = appData.knowledgeMatrix.findIndex(x => x.id === id);
+    if (idx >= 0) appData.knowledgeMatrix[idx] = obj;
+  } else {
+    appData.knowledgeMatrix.push(obj);
+  }
+
+  saveData();
+  closeModal();
+  document.getElementById('kStudentFilter').value = studentId;
+  renderKnowledgeModule();
+  showToast('知识点已保存', 'success');
+}
+
+function deleteKnowledge(id) {
+  if (!confirm('确认删除该知识点？')) return;
+  appData.knowledgeMatrix = appData.knowledgeMatrix.filter(k => k.id !== id);
+  saveData();
+  renderKnowledgeModule();
+  showToast('知识点已删除', 'info');
+}
+
+// ============================================================
+//  4. LESSON PLANNING
+// ============================================================
+function renderLessonPlanList() {
+  const sid = document.getElementById('lpStudentFilter').value;
+  populateStudentSelect('lpStudentFilter', true);
+  const container = document.getElementById('lessonPlanList');
+  let plans = sid ? appData.lessonPlans.filter(l => l.studentId === sid) : appData.lessonPlans;
+  plans.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+
+  if (!sid) {
+    container.innerHTML = '<p class="empty-state">请先选择学生</p>';
+    return;
+  }
+  if (!plans.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>暂无备课记录</p></div>';
+    return;
+  }
+
+  container.innerHTML = plans.map(p => `
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong>${escHtml(p.title || '未命名备课')}</strong>
+          <span style="color:var(--text-secondary);font-size:0.8rem;margin-left:8px">${fmtDate(p.createdAt || p.date)}</span>
+          <span class="badge badge-primary" style="margin-left:8px">${escHtml(p.subject || '')}</span>
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="deleteLessonPlan('${p.id}')">删除</button>
+      </div>
+      ${p.topics ? `<div style="margin-top:6px;font-size:0.85rem"><strong>知识点：</strong>${escHtml(p.topics)}</div>` : ''}
+      ${p.examples ? `<div style="margin-top:4px;font-size:0.85rem"><strong>例题：</strong>${escHtml(p.examples)}</div>` : ''}
+      ${p.exercises ? `<div style="margin-top:4px;font-size:0.85rem"><strong>习题：</strong>${escHtml(p.exercises)}</div>` : ''}
+      ${p.materials && p.materials.length ? `<div style="margin-top:4px;font-size:0.85rem"><strong>素材：</strong>${p.materials.map(m => {
+        if (m.type === 'link') return `<a href="${escHtml(m.url)}" target="_blank" style="color:var(--primary)">🔗 ${escHtml(m.label || m.url)}</a>`;
+        if (m.type === 'image') return `<span>🖼️ ${escHtml(m.label || '图片')}</span>`;
+        return escHtml(m.content || '');
+      }).join(' ')}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function showLessonPlanForm() {
+  const sid = document.getElementById('lpStudentFilter').value;
+  if (!sid) { showToast('请先选择学生', 'error'); return; }
+  const student = getStudent(sid);
+
+  // Suggest weak topics
+  const weakTopics = appData.knowledgeMatrix.filter(k => k.studentId === sid && k.mastery <= 2);
+  const weakSuggestion = weakTopics.length
+    ? `<div style="margin-bottom:8px;font-size:0.8rem;color:var(--text-secondary)">💡 该学生薄弱知识点：${weakTopics.map(w => w.chapter + '-' + w.topic).join('、')}</div>`
+    : '';
+
+  const bodyHTML = `
+    <input type="hidden" id="lpfStudent" value="${sid}">
+    <div class="form-row">
+      <div class="form-group"><label>备课标题</label><input class="form-control" id="lpfTitle" placeholder="如：二次函数专题"></div>
+      <div class="form-group"><label>日期</label><input type="date" class="form-control" id="lpfDate" value="${todayStr()}"></div>
+    </div>
+    <div class="form-group"><label>科目</label><input class="form-control" id="lpfSubject" value="${student ? student.subject : ''}"></div>
+    ${weakSuggestion}
+    <div class="form-group"><label>本次知识点</label><textarea class="form-control" id="lpfTopics" placeholder="列出本次课要讲的知识点..."></textarea></div>
+    <div class="form-group"><label>例题</label><textarea class="form-control" id="lpfExamples" placeholder="粘贴或输入例题..."></textarea></div>
+    <div class="form-group"><label>习题</label><textarea class="form-control" id="lpfExercises" placeholder="粘贴或输入习题..."></textarea></div>
+    <div class="form-group"><label>课件链接</label><input class="form-control" id="lpfLink" placeholder="粘贴课件链接（可选）"></div>
+    <div class="form-group"><label>上传图片素材</label><input type="file" accept="image/*" id="lpfImage" onchange="handleLessonImage(event)" style="display:block;font-size:0.85rem"><small style="color:var(--text-secondary)">图片将转为 Base64 存储，请注意文件大小</small></div>
+    <div id="lpfImagePreview" style="margin-top:6px"></div>
+    <input type="hidden" id="lpfMaterialData" value="">
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveLessonPlan()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal('新建备课', bodyHTML, footerHTML);
+}
+
+function handleLessonImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 500 * 1024) {
+    showToast('图片大小超过 500KB，可能影响存储。建议压缩后再上传。', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('lpfMaterialData').value = JSON.stringify([{ type: 'image', label: file.name, url: e.target.result }]);
+    document.getElementById('lpfImagePreview').innerHTML = `<img src="${e.target.result}" style="max-width:200px;max-height:150px;border-radius:4px">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveLessonPlan() {
+  const studentId = document.getElementById('lpfStudent').value;
+  const title = document.getElementById('lpfTitle').value.trim();
+  const date = document.getElementById('lpfDate').value;
+  const subject = document.getElementById('lpfSubject').value.trim();
+  const topics = document.getElementById('lpfTopics').value.trim();
+  const examples = document.getElementById('lpfExamples').value.trim();
+  const exercises = document.getElementById('lpfExercises').value.trim();
+  const link = document.getElementById('lpfLink').value.trim();
+  const materialData = document.getElementById('lpfMaterialData').value;
+
+  const materials = [];
+  if (link) materials.push({ type: 'link', url: link, label: link });
+  if (materialData) {
+    try { materials.push(...JSON.parse(materialData)); } catch(e) {}
+  }
+
+  appData.lessonPlans.push({
+    id: genId(),
+    studentId, title: title || '未命名备课', createdAt: date, subject,
+    topics, examples, exercises, materials
+  });
+
+  saveData();
+  closeModal();
+  renderLessonPlanList();
+  showToast('备课已保存', 'success');
+}
+
+function deleteLessonPlan(id) {
+  if (!confirm('确认删除该备课记录？')) return;
+  appData.lessonPlans = appData.lessonPlans.filter(l => l.id !== id);
+  saveData();
+  renderLessonPlanList();
+  showToast('备课已删除', 'info');
+}
+
+// ============================================================
+//  5. CLASSROOM RECORDS
+// ============================================================
+function renderClassroomModule() {
+  const sid = document.getElementById('crStudentFilter').value;
+  populateStudentSelect('crStudentFilter', true);
+  const container = document.getElementById('classroomRecordsList');
+  let records = sid ? appData.classroomRecords.filter(r => r.studentId === sid) : appData.classroomRecords;
+  records.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (!sid) {
+    container.innerHTML = '<p class="empty-state">请先选择学生</p>';
+    return;
+  }
+  if (!records.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎓</div><p>暂无课堂记录</p></div>';
+    return;
+  }
+
+  container.innerHTML = records.map(r => `
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong>${escHtml(getStudentName(r.studentId))}</strong>
+          <span style="color:var(--text-secondary);font-size:0.8rem;margin-left:8px">${fmtDate(r.date)}</span>
+          <span class="badge badge-primary" style="margin-left:8px">听懂：${'★'.repeat(r.understanding)}${'☆'.repeat(5-r.understanding)}</span>
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="deleteClassroomRecord('${r.id}')">删除</button>
+      </div>
+      ${r.questions ? `<div style="margin-top:6px;font-size:0.85rem"><strong>❓ 疑问：</strong>${escHtml(r.questions)}</div>` : ''}
+      ${r.mistakes ? `<div style="margin-top:4px;font-size:0.85rem"><strong>❌ 错题：</strong>${escHtml(r.mistakes)}</div>` : ''}
+      ${r.notes ? `<div style="margin-top:4px;font-size:0.85rem;color:var(--text-secondary)"><strong>📝 笔记：</strong>${escHtml(r.notes)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function showClassroomForm() {
+  const sid = document.getElementById('crStudentFilter').value;
+  if (!sid) { showToast('请先选择学生', 'error'); return; }
+  const student = getStudent(sid);
+
+  const bodyHTML = `
+    <input type="hidden" id="crfStudent" value="${sid}">
+    <div class="form-row">
+      <div class="form-group"><label>日期</label><input type="date" class="form-control" id="crfDate" value="${todayStr()}"></div>
+      <div class="form-group"><label>听懂程度 (1-5星)</label>
+        <div style="font-size:1.5rem;cursor:pointer" id="crfStars">
+          ${[1,2,3,4,5].map(i => `<span data-v="${i}" style="color:${i<=3?'#f59e0b':'#d1d5db'}">★</span>`).join('')}
+        </div>
+        <input type="hidden" id="crfUnderstanding" value="3">
+      </div>
+    </div>
+    <div class="form-group"><label>疑问点</label><textarea class="form-control" id="crfQuestions" placeholder="学生提出的疑问..."></textarea>
+      <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="startSpeech('crfQuestions')" type="button">🎤 语音转文字</button>
+    </div>
+    <div class="form-group"><label>讲过的错题</label><textarea class="form-control" id="crfMistakes" placeholder="课堂上讲过的错题..."></textarea></div>
+    <div class="form-group"><label>备注</label><textarea class="form-control" id="crfNotes" placeholder="其他备注..."></textarea></div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveClassroomRecord()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal('新建课堂记录', bodyHTML, footerHTML);
+
+  // Bind star click
+  setTimeout(() => {
+    const starContainer = document.getElementById('crfStars');
+    if (starContainer) {
+      starContainer.addEventListener('click', function(e) {
+        const star = e.target.closest('span[data-v]');
+        if (!star) return;
+        const val = parseInt(star.dataset.v);
+        document.getElementById('crfUnderstanding').value = val;
+        starContainer.querySelectorAll('span').forEach((s, i) => {
+          s.style.color = i < val ? '#f59e0b' : '#d1d5db';
+        });
+      });
+    }
+  }, 100);
+}
+
+function saveClassroomRecord() {
+  const studentId = document.getElementById('crfStudent').value;
+  const date = document.getElementById('crfDate').value;
+  const understanding = parseInt(document.getElementById('crfUnderstanding').value);
+  const questions = document.getElementById('crfQuestions').value.trim();
+  const mistakes = document.getElementById('crfMistakes').value.trim();
+  const notes = document.getElementById('crfNotes').value.trim();
+
+  appData.classroomRecords.push({ id: genId(), studentId, date, understanding, questions, mistakes, notes });
+  // Auto-save mistakes as wrong questions
+  if (mistakes) {
+    const mistakeLines = mistakes.split(/[,，、\n;；]/).map(s => s.trim()).filter(Boolean);
+    mistakeLines.forEach(line => {
+      if (line.length > 2) {
+        appData.wrongQuestions.push({
+          id: genId(),
+          studentId,
+          subject: getStudent(studentId) ? getStudent(studentId).subject : '',
+          question: line,
+          answer: '',
+          points: 5,
+          source: '课堂记录',
+          date: date
+        });
+      }
+    });
+  }
+
+  saveData();
+  closeModal();
+  renderClassroomModule();
+  showToast('课堂记录已保存（错题已自动加入错题本）', 'success');
+}
+
+function deleteClassroomRecord(id) {
+  if (!confirm('确认删除该课堂记录？')) return;
+  appData.classroomRecords = appData.classroomRecords.filter(r => r.id !== id);
+  saveData();
+  renderClassroomModule();
+  showToast('课堂记录已删除', 'info');
+}
+
+// ============================================================
+//  SPEECH RECOGNITION
+// ============================================================
+let currentRecognition = null;
+
+function startSpeech(targetId) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('您的浏览器不支持语音识别。请使用 Chrome 浏览器。', 'error');
+    return;
+  }
+
+  if (currentRecognition) {
+    currentRecognition.stop();
+    currentRecognition = null;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'zh-CN';
+  recognition.interimResults = true;
+  recognition.continuous = true;
+  currentRecognition = recognition;
+
+  const textarea = document.getElementById(targetId);
+  if (textarea) textarea.placeholder = '🎤 正在聆听...';
+
+  recognition.onresult = function(event) {
+    let finalTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      }
+    }
+    if (finalTranscript && textarea) {
+      textarea.value = (textarea.value ? textarea.value + ' ' : '') + finalTranscript;
+    }
+  };
+
+  recognition.onerror = function(event) {
+    showToast('语音识别出错：' + event.error, 'error');
+    if (textarea) textarea.placeholder = '';
+    currentRecognition = null;
+  };
+
+  recognition.onend = function() {
+    if (textarea) textarea.placeholder = '';
+    currentRecognition = null;
+  };
+
+  recognition.start();
+  showToast('语音识别已开启，请说话...', 'info');
+
+  // Auto-stop after 60 seconds
+  setTimeout(() => {
+    if (currentRecognition === recognition) {
+      recognition.stop();
+      currentRecognition = null;
+    }
+  }, 60000);
+}
+
+// Stop recognition when modal closes
+const origCloseModal = closeModal;
+closeModal = function() {
+  if (currentRecognition) {
+    currentRecognition.stop();
+    currentRecognition = null;
+  }
+  origCloseModal();
+};
+
+// ============================================================
+//  6. REVIEW MODULE (5 SUB-MODULES)
+// ============================================================
+
+// -- Sub-tab navigation --
+function switchReviewSubTab(subtab) {
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.review-subpanel').forEach(p => p.classList.remove('active'));
+  const tab = document.querySelector(`.sub-tab[data-subtab="${subtab}"]`);
+  if (tab) tab.classList.add('active');
+  const panel = document.getElementById('subpanel-' + subtab);
+  if (panel) panel.classList.add('active');
+  refreshReviewSubTab();
+}
+
+function refreshReviewSubTab() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  populateStudentSelect('reviewStudentFilter', true);
+  const activePanel = document.querySelector('.review-subpanel.active');
+  if (!activePanel) return;
+  const subtab = activePanel.id.replace('subpanel-', '');
+  switch(subtab) {
+    case 'review-card': renderReviewCardList(); break;
+    case 'review-trends': renderTrendsModule(); break;
+    case 'review-plan': renderReviewPlanContainer(); break;
+    case 'review-report': generateGrowthReport(); break;
+    case 'review-habits': renderHabitsModule(); break;
+  }
+}
+
+// Bind sub-tab clicks
+document.addEventListener('click', function(e) {
+  const subTab = e.target.closest('.sub-tab');
+  if (subTab) {
+    const subtab = subTab.dataset.subtab;
+    if (subtab) switchReviewSubTab(subtab);
+  }
+});
+
+// Export for onclick usage
+function renderReviewModule() {
+  // Entry point when switching to the review tab from sidebar
+  populateStudentSelect('reviewStudentFilter', true);
+  refreshReviewSubTab();
+}
+
+// ============================================================
+//  6.1 REVIEW CARDS (即时复盘卡)
+// ============================================================
+function renderReviewCardList() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const container = document.getElementById('reviewCardList');
+  if (!sid) { container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>请先选择学生</p></div>'; return; }
+
+  const cards = appData.reviewCards.filter(c => c.studentId === sid).sort((a,b) => new Date(b.date) - new Date(a.date));
+  if (!cards.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>暂无复盘卡，点击"新建复盘卡"或"快速复盘"开始</p></div>';
+    return;
+  }
+
+  container.innerHTML = cards.map(c => `
+    <div class="card review-card ${c.isQuickReview ? 'quick' : ''}" style="margin-bottom:12px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong>📋 ${fmtDate(c.date)} 复盘</strong>
+          ${c.isQuickReview ? '<span class="badge badge-warning" style="margin-left:6px">⚡ 快速</span>' : ''}
+          <span class="badge badge-primary" style="margin-left:6px">目标达成：${'★'.repeat(c.goalAchievement)}</span>
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="deleteReviewCard('${c.id}')">删除</button>
+      </div>
+      ${c.teachingGoals ? `<div style="margin-top:6px;font-size:0.85rem"><strong>🎯 教学目标：</strong>${escHtml(c.teachingGoals)}</div>` : ''}
+      <div class="review-rating-row" style="margin-top:6px">
+        <div class="review-rating-item"><span class="label">参与度</span>${'★'.repeat(c.participation)}${'☆'.repeat(5-c.participation)}</div>
+        <div class="review-rating-item"><span class="label">理解度</span>${'★'.repeat(c.comprehension)}${'☆'.repeat(5-c.comprehension)}</div>
+        <div class="review-rating-item"><span class="label">专注度</span>${'★'.repeat(c.focus)}${'☆'.repeat(5-c.focus)}</div>
+        <div class="review-rating-item"><span class="label">作业质量</span>${'★'.repeat(c.homeworkQuality)}${'☆'.repeat(5-c.homeworkQuality)}</div>
+      </div>
+      ${c.knowledgeChanges && c.knowledgeChanges.length ? `
+        <div style="margin-top:6px;font-size:0.85rem"><strong>📊 知识点变化：</strong>
+          ${c.knowledgeChanges.map(kc => `<span style="margin:2px" class="badge ${kc.postMastery > kc.preMastery ? 'badge-success' : kc.postMastery < kc.preMastery ? 'badge-danger' : 'badge-primary'}">${escHtml(kc.topic)}: ${kc.preMastery}⭐→${kc.postMastery}⭐</span>`).join(' ')}
+        </div>` : ''}
+      ${c.remainingIssues ? `<div style="margin-top:4px;font-size:0.85rem"><strong>❓ 遗留问题：</strong>${escHtml(c.remainingIssues)}</div>` : ''}
+      ${c.teacherSelfEval ? `<div style="margin-top:4px;font-size:0.85rem;color:var(--text-secondary)"><strong>👨‍🏫 老师自评：</strong>${escHtml(c.teacherSelfEval)}</div>` : ''}
+      ${c.improvementPlan ? `<div style="margin-top:4px;font-size:0.85rem"><strong>💡 改进计划：</strong>${escHtml(c.improvementPlan)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function showReviewCardForm(existingCard) {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  if (!sid) { showToast('请先选择学生', 'error'); return; }
+  const c = existingCard || {};
+  const knowledgePoints = appData.knowledgeMatrix.filter(k => k.studentId === sid);
+
+  let kpHTML = '';
+  if (knowledgePoints.length) {
+    kpHTML = `<div class="form-group"><label>知识点掌握变化（课前预估 → 课后实际）</label><div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">`;
+    knowledgePoints.forEach(k => {
+      const existingChange = (c.knowledgeChanges || []).find(kc => kc.knowledgeId === k.id);
+      kpHTML += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:0.8rem">
+        <span style="min-width:120px">${escHtml((k.chapter + ' - ' + k.topic).substring(0, 25))}</span>
+        <span>课前</span><input type="number" value="${existingChange ? existingChange.preMastery : k.mastery}" min="1" max="5" style="width:50px;padding:4px" class="kp-pre" data-kid="${k.id}" data-topic="${escHtml(k.topic)}">
+        <span>→ 课后</span><input type="number" value="${existingChange ? existingChange.postMastery : Math.min(5, k.mastery+1)}" min="1" max="5" style="width:50px;padding:4px" class="kp-post" data-kid="${k.id}">
+      </div>`;
+    });
+    kpHTML += '</div></div>';
+  }
+
+  const bodyHTML = `
+    <input type="hidden" id="rcfId" value="${c.id || ''}">
+    <div class="form-row">
+      <div class="form-group"><label>日期</label><input type="date" class="form-control" id="rcfDate" value="${c.date || todayStr()}"></div>
+      <div class="form-group"><label>目标达成度 (1-5)</label><div id="rcfGoalStars" style="font-size:1.5rem;cursor:pointer">${[1,2,3,4,5].map(i => `<span data-v="${i}" style="color:${i<=(c.goalAchievement||3)?'#f59e0b':'#d1d5db'}">★</span>`).join('')}</div><input type="hidden" id="rcfGoal" value="${c.goalAchievement || 3}"></div>
+    </div>
+    <div class="form-group"><label>本节课教学目标</label><textarea class="form-control" id="rcfGoals" rows="2" placeholder="课前填写，课后对比达成度">${escHtml(c.teachingGoals || '')}</textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>参与度</label><div class="star-review" data-target="rcfParticipation">${makeStarDiv(c.participation || 3, 'rcfParticipation')}</div><input type="hidden" id="rcfParticipation" value="${c.participation || 3}"></div>
+      <div class="form-group"><label>理解速度</label><div class="star-review" data-target="rcfComprehension">${makeStarDiv(c.comprehension || 3, 'rcfComprehension')}</div><input type="hidden" id="rcfComprehension" value="${c.comprehension || 3}"></div>
+      <div class="form-group"><label>专注度</label><div class="star-review" data-target="rcfFocus">${makeStarDiv(c.focus || 3, 'rcfFocus')}</div><input type="hidden" id="rcfFocus" value="${c.focus || 3}"></div>
+    </div>
+    ${kpHTML}
+    <div class="form-group"><label>遗留问题清单</label><textarea class="form-control" id="rcfIssues" rows="2" placeholder="具体哪些点没懂，记下来">${escHtml(c.remainingIssues || '')}</textarea></div>
+    <div class="form-group"><label>上次作业完成质量 (1-5)</label><div class="star-review" data-target="rcfHomework">${makeStarDiv(c.homeworkQuality || 3, 'rcfHomework')}</div><input type="hidden" id="rcfHomework" value="${c.homeworkQuality || 3}"></div>
+    <div class="form-group"><label>老师自评（教学方法是否有效，下次如何改进）</label><textarea class="form-control" id="rcfSelfEval" rows="2">${escHtml(c.teacherSelfEval || '')}</textarea></div>
+    <div class="form-group"><label>改进计划</label><textarea class="form-control" id="rcfImprove" rows="2">${escHtml(c.improvementPlan || '')}</textarea></div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveReviewCard()">💾 保存复盘卡</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal(c.id ? '编辑复盘卡' : '新建复盘卡', bodyHTML, footerHTML);
+
+  // Star click handlers
+  setTimeout(() => bindStarClicks('rcfGoalStars', 'rcfGoal'), 80);
+  setTimeout(() => bindAllReviewStars(), 80);
+}
+
+function makeStarDiv(val, targetId) {
+  return Array.from({length:5}, (_,i) => `<span data-v="${i+1}" data-target="${targetId}" style="color:${i<val?'#f59e0b':'#d1d5db'};font-size:1.3rem;cursor:pointer">★</span>`).join('');
+}
+
+function bindAllReviewStars() {
+  document.querySelectorAll('.star-review span[data-v]').forEach(star => {
+    star.addEventListener('click', function() {
+      const v = parseInt(this.dataset.v);
+      const target = this.dataset.target;
+      document.getElementById(target).value = v;
+      const parent = this.parentElement;
+      parent.querySelectorAll('span').forEach((s, i) => { s.style.color = i < v ? '#f59e0b' : '#d1d5db'; });
+    });
+  });
+}
+
+function bindStarClicks(containerId, inputId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('span').forEach(star => {
+    star.addEventListener('click', function() {
+      const v = parseInt(this.dataset.v);
+      document.getElementById(inputId).value = v;
+      container.querySelectorAll('span').forEach((s, i) => { s.style.color = i < v ? '#f59e0b' : '#d1d5db'; });
+    });
+  });
+}
+
+function saveReviewCard() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const id = document.getElementById('rcfId').value;
+  const date = document.getElementById('rcfDate').value;
+  const goalAchievement = parseInt(document.getElementById('rcfGoal').value);
+  const teachingGoals = document.getElementById('rcfGoals').value.trim();
+  const participation = parseInt(document.getElementById('rcfParticipation').value);
+  const comprehension = parseInt(document.getElementById('rcfComprehension').value);
+  const focus = parseInt(document.getElementById('rcfFocus').value);
+  const remainingIssues = document.getElementById('rcfIssues').value.trim();
+  const homeworkQuality = parseInt(document.getElementById('rcfHomework').value);
+  const teacherSelfEval = document.getElementById('rcfSelfEval').value.trim();
+  const improvementPlan = document.getElementById('rcfImprove').value.trim();
+
+  // Collect knowledge changes
+  const knowledgeChanges = [];
+  document.querySelectorAll('.kp-pre').forEach(preInput => {
+    const kid = preInput.dataset.kid;
+    const topic = preInput.dataset.topic;
+    const postInput = document.querySelector(`.kp-post[data-kid="${kid}"]`);
+    if (postInput) {
+      knowledgeChanges.push({
+        knowledgeId: kid,
+        topic: topic,
+        preMastery: parseInt(preInput.value) || 3,
+        postMastery: parseInt(postInput.value) || 3
+      });
+    }
+  });
+
+  const card = {
+    id: id || genId(),
+    studentId: sid, date, teachingGoals, goalAchievement,
+    participation, comprehension, focus,
+    knowledgeChanges, remainingIssues, homeworkQuality,
+    teacherSelfEval, improvementPlan,
+    isQuickReview: false
+  };
+
+  if (id) {
+    const idx = appData.reviewCards.findIndex(c => c.id === id);
+    if (idx >= 0) appData.reviewCards[idx] = card;
+  } else {
+    appData.reviewCards.push(card);
+  }
+
+  // Update knowledge matrix with post-mastery values
+  knowledgeChanges.forEach(kc => {
+    const km = appData.knowledgeMatrix.find(k => k.id === kc.knowledgeId);
+    if (km) km.mastery = kc.postMastery;
+  });
+
+  // Update review habits
+  updateReviewHabits();
+
+  saveData();
+  closeModal();
+  renderReviewCardList();
+  showToast('复盘卡已保存', 'success');
+}
+
+function deleteReviewCard(id) {
+  if (!confirm('确认删除该复盘卡？')) return;
+  appData.reviewCards = appData.reviewCards.filter(c => c.id !== id);
+  saveData();
+  renderReviewCardList();
+}
+
+function startQuickReview() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  if (!sid) { showToast('请先选择学生', 'error'); return; }
+  const knowledgePoints = appData.knowledgeMatrix.filter(k => k.studentId === sid);
+
+  let kpQuickHTML = '';
+  if (knowledgePoints.length) {
+    kpQuickHTML = '<div class="form-group"><label>知识点掌握（课后实际）</label><div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:8px">';
+    knowledgePoints.slice(0, 10).forEach(k => {
+      kpQuickHTML += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.8rem">
+        <span style="min-width:100px">${escHtml(k.topic.substring(0,15))}</span>
+        <select class="qp-mastery" data-kid="${k.id}" data-topic="${escHtml(k.topic)}" style="padding:2px;font-size:0.8rem">
+          ${[1,2,3,4,5].map(i => `<option value="${i}" ${i===k.mastery?'selected':''}>${'★'.repeat(i)}</option>`).join('')}
+        </select>
+      </div>`;
+    });
+    kpQuickHTML += '</div></div>';
+  }
+
+  const bodyHTML = `
+    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px">⚡ 快速复盘只需30秒，点击几下即可完成课后记录。</p>
+    <div class="form-group"><label>教学目标简要</label><input class="form-control" id="qrfGoals" placeholder="如：掌握配方法解一元二次方程"></div>
+    <div class="form-row">
+      <div class="form-group"><label>听懂程度</label><select class="form-control" id="qrfUnderstanding"><option value="5">★★★★★ 完全掌握</option><option value="4">★★★★ 大部分懂</option><option value="3" selected>★★★ 基本理解</option><option value="2">★★ 部分理解</option><option value="1">★ 基本没懂</option></select></div>
+      <div class="form-group"><label>作业质量</label><select class="form-control" id="qrfHomework"><option value="5">★★★★★</option><option value="4">★★★★</option><option value="3" selected>★★★</option><option value="2">★★</option><option value="1">★</option></select></div>
+    </div>
+    ${kpQuickHTML}
+    <div class="form-group"><label>遗留问题（简要）</label><input class="form-control" id="qrfIssues" placeholder="如：公式法求根不太熟练"></div>
+    <div class="form-group"><label>下次改进</label><input class="form-control" id="qrfImprove" placeholder="如：多出几道公式法练习题"></div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveQuickReview()">⚡ 快速保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal('⚡ 快速复盘', bodyHTML, footerHTML);
+}
+
+function saveQuickReview() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const goalAchievement = parseInt(document.getElementById('qrfUnderstanding').value);
+  const teachingGoals = document.getElementById('qrfGoals').value.trim();
+  const homeworkQuality = parseInt(document.getElementById('qrfHomework').value);
+  const remainingIssues = document.getElementById('qrfIssues').value.trim();
+  const improvementPlan = document.getElementById('qrfImprove').value.trim();
+
+  const knowledgeChanges = [];
+  document.querySelectorAll('.qp-mastery').forEach(sel => {
+    const kid = sel.dataset.kid;
+    const topic = sel.dataset.topic;
+    const km = appData.knowledgeMatrix.find(k => k.id === kid);
+    const preMastery = km ? km.mastery : 3;
+    const postMastery = parseInt(sel.value);
+    knowledgeChanges.push({ knowledgeId: kid, topic, preMastery, postMastery });
+    if (km) km.mastery = postMastery;
+  });
+
+  appData.reviewCards.push({
+    id: genId(), studentId: sid, date: todayStr(),
+    teachingGoals, goalAchievement,
+    participation: Math.max(1, goalAchievement-1),
+    comprehension: goalAchievement,
+    focus: Math.max(1, goalAchievement-1),
+    knowledgeChanges, remainingIssues, homeworkQuality,
+    teacherSelfEval: '', improvementPlan,
+    isQuickReview: true
+  });
+
+  updateReviewHabits();
+  saveData();
+  closeModal();
+  renderReviewCardList();
+  showToast('快速复盘已保存！', 'success');
+}
+
+function updateReviewHabits() {
+  const today = todayStr();
+  const habits = appData.reviewHabits;
+  if (habits.lastReviewDate === today) return; // Already logged today
+
+  const yesterday = fmtDate(new Date(Date.now() - 86400000));
+  if (habits.lastReviewDate === yesterday) {
+    habits.consecutiveDays++;
+  } else if (habits.lastReviewDate !== today) {
+    habits.consecutiveDays = 1;
+  }
+  habits.lastReviewDate = today;
+  habits.totalReviews = (habits.totalReviews || 0) + 1;
+  if (habits.consecutiveDays > (habits.longestStreak || 0)) {
+    habits.longestStreak = habits.consecutiveDays;
+  }
+}
+
+// ============================================================
+//  6.2 PROGRESS TRENDS (进步趋势)
+// ============================================================
+function renderTrendsModule() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  if (!sid) {
+    ['masteryTrendChart','errorRecurrenceChart','inputVsResultChart'].forEach(id => {
+      const c = document.getElementById(id); if (c) { const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }
+    });
+    return;
+  }
+  populateKnowledgeFilterForTrends(sid);
+  renderMasteryTrendChart();
+  renderErrorRecurrenceChart();
+  renderInputVsResultChart();
+  renderWeakTopicRanking();
+}
+
+function populateKnowledgeFilterForTrends(sid) {
+  const sel = document.getElementById('trendKnowledgeFilter');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- 选择知识点 --</option>';
+  appData.knowledgeMatrix.filter(k => k.studentId === sid).forEach(k => {
+    sel.innerHTML += `<option value="${k.id}">${escHtml(k.chapter + ' - ' + k.topic)}</option>`;
+  });
+  sel.value = current;
+}
+
+function renderMasteryTrendChart() {
+  if (masteryTrendChartInst) { masteryTrendChartInst.destroy(); masteryTrendChartInst = null; }
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const kid = document.getElementById('trendKnowledgeFilter')?.value;
+  const ctx = document.getElementById('masteryTrendChart');
+  if (!ctx || !sid) return;
+
+  let dataPoints = [];
+  if (kid) {
+    // Get mastery history from review cards' knowledgeChanges
+    const cards = appData.reviewCards.filter(c => c.studentId === sid).sort((a,b) => new Date(a.date) - new Date(b.date));
+    cards.forEach(c => {
+      if (c.knowledgeChanges) {
+        const kc = c.knowledgeChanges.find(k => k.knowledgeId === kid);
+        if (kc) dataPoints.push({ date: c.date, mastery: kc.postMastery });
+      }
+    });
+    // Prepend current mastery from matrix
+    const km = appData.knowledgeMatrix.find(k => k.id === kid);
+    if (km && dataPoints.length === 0) {
+      dataPoints.push({ date: todayStr(), mastery: km.mastery });
+    }
+  } else {
+    // Show average mastery across all knowledge points over time
+    const cards = appData.reviewCards.filter(c => c.studentId === sid).sort((a,b) => new Date(a.date) - new Date(b.date));
+    cards.forEach(c => {
+      if (c.knowledgeChanges && c.knowledgeChanges.length) {
+        const avg = c.knowledgeChanges.reduce((s,kc) => s + kc.postMastery, 0) / c.knowledgeChanges.length;
+        dataPoints.push({ date: c.date, mastery: Math.round(avg * 10) / 10 });
+      }
+    });
+  }
+
+  if (dataPoints.length < 1) {
+    const km = appData.knowledgeMatrix.filter(k => k.studentId === sid);
+    if (km.length) {
+      const avg = km.reduce((s,k) => s + k.mastery, 0) / km.length;
+      dataPoints = [{ date: todayStr(), mastery: Math.round(avg * 10) / 10 }];
+    }
+  }
+  if (dataPoints.length === 0) return;
+
+  masteryTrendChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dataPoints.map(d => d.date),
+      datasets: [{
+        label: '掌握度',
+        data: dataPoints.map(d => d.mastery),
+        borderColor: '#4a6cf7', backgroundColor: 'rgba(74,108,247,0.1)',
+        fill: true, tension: 0.3, pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { min: 0, max: 5, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+function renderErrorRecurrenceChart() {
+  if (errorRecurrenceChartInst) { errorRecurrenceChartInst.destroy(); errorRecurrenceChartInst = null; }
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const ctx = document.getElementById('errorRecurrenceChart');
+  if (!ctx || !sid) return;
+
+  // Count wrong questions by knowledge topic → recurrence
+  const wrongByTopic = {};
+  appData.wrongQuestions.filter(w => w.studentId === sid).forEach(w => {
+    const key = w.question?.substring(0, 40) || w.chapter || '未知';
+    wrongByTopic[key] = (wrongByTopic[key] || 0) + 1;
+  });
+
+  const entries = Object.entries(wrongByTopic).filter(e => e[1] >= 1).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  if (!entries.length) return;
+
+  errorRecurrenceChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: entries.map(e => e[0]),
+      datasets: [{
+        label: '错题次数',
+        data: entries.map(e => e[1]),
+        backgroundColor: entries.map((_,i) => i < 2 ? 'rgba(239,68,68,0.7)' : 'rgba(245,158,11,0.6)'),
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+function renderInputVsResultChart() {
+  if (inputVsResultChartInst) { inputVsResultChartInst.destroy(); inputVsResultChartInst = null; }
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const ctx = document.getElementById('inputVsResultChart');
+  if (!ctx || !sid) return;
+
+  const sessions = appData.sessions.filter(s => s.studentId === sid).sort((a,b) => new Date(a.date) - new Date(b.date));
+  const exams = appData.exams.filter(e => e.studentId === sid).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  // Group by month
+  const monthlyData = {};
+  sessions.forEach(s => {
+    const month = s.date.substring(0, 7);
+    if (!monthlyData[month]) monthlyData[month] = { sessions: 0, totalDuration: 0, exams: 0, totalRate: 0, examCount: 0 };
+    monthlyData[month].sessions++;
+    monthlyData[month].totalDuration += s.duration || 0;
+  });
+  exams.forEach(e => {
+    const month = e.date.substring(0, 7);
+    if (!monthlyData[month]) monthlyData[month] = { sessions: 0, totalDuration: 0, exams: 0, totalRate: 0, examCount: 0 };
+    monthlyData[month].examCount++;
+    monthlyData[month].totalRate += ratePercent(e.score, e.total);
+  });
+
+  const months = Object.keys(monthlyData).sort();
+  if (months.length === 0) return;
+
+  inputVsResultChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label: '上课次数', data: months.map(m => monthlyData[m].sessions), backgroundColor: 'rgba(74,108,247,0.6)', borderRadius: 4, yAxisID: 'y' },
+        { label: '平均得分率(%)', data: months.map(m => monthlyData[m].examCount ? (monthlyData[m].totalRate / monthlyData[m].examCount).toFixed(1) : null), type: 'line', borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.3, pointRadius: 5, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: '次数' }, position: 'left' },
+        y1: { beginAtZero: false, min: 0, max: 100, title: { display: true, text: '得分率(%)' }, position: 'right', grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+}
+
+function renderWeakTopicRanking() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const container = document.getElementById('weakTopicRanking');
+  if (!sid) { container.innerHTML = ''; return; }
+
+  const weak = appData.knowledgeMatrix.filter(k => k.studentId === sid && k.mastery <= 3).sort((a,b) => a.mastery - b.mastery);
+  if (!weak.length) {
+    container.innerHTML = '<p style="color:var(--success);font-size:0.85rem">✅ 所有知识点掌握度均 ≥3 星，没有明显薄弱项！</p>';
+    return;
+  }
+
+  // Check progress from review cards
+  container.innerHTML = `
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px">当前最薄弱的知识点（按掌握度排序）：</p>
+    <table style="font-size:0.8rem">
+      <thead><tr><th>排名</th><th>知识点</th><th>当前掌握度</th><th>趋势</th></tr></thead>
+      <tbody>${weak.slice(0, 8).map((k, i) => {
+        // Check trend from recent review cards
+        const recentCards = appData.reviewCards.filter(c => c.studentId === sid).sort((a,b) => new Date(b.date) - new Date(a.date));
+        let trend = '—';
+        if (recentCards.length >= 2) {
+          const kc1 = recentCards[0]?.knowledgeChanges?.find(kc => kc.knowledgeId === k.id);
+          const kc2 = recentCards[1]?.knowledgeChanges?.find(kc => kc.knowledgeId === k.id);
+          if (kc1 && kc2) {
+            trend = kc1.postMastery > kc2.postMastery ? '📈' : kc1.postMastery < kc2.postMastery ? '📉' : '➡️';
+          }
+        }
+        return `<tr>
+          <td><strong>#${i+1}</strong></td>
+          <td>${escHtml(k.chapter + ' - ' + k.topic)}</td>
+          <td>${'★'.repeat(k.mastery)}${'☆'.repeat(5-k.mastery)}</td>
+          <td>${trend}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  `;
+}
+
+// Clean up chart instances when switching away
+function destroyReviewCharts() {
+  [masteryTrendChartInst, errorRecurrenceChartInst, inputVsResultChartInst].forEach(inst => {
+    if (inst) { inst.destroy(); }
+  });
+  masteryTrendChartInst = null;
+  errorRecurrenceChartInst = null;
+  inputVsResultChartInst = null;
+}
+
+// ============================================================
+//  6.3 REVIEW PLAN GENERATOR (复习计划)
+// ============================================================
+function renderReviewPlanContainer() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const container = document.getElementById('reviewPlanContainer');
+  if (!sid) { container.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>请先选择学生</p></div>'; return; }
+
+  const plans = appData.reviewPlans.filter(p => p.studentId === sid).sort((a,b) => new Date(b.generatedDate) - new Date(a.generatedDate));
+  if (!plans.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>暂无复习计划，点击"自动生成复习计划"</p></div>';
+    return;
+  }
+  renderReviewPlan(plans[0]);
+}
+
+function generateReviewPlan() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  if (!sid) { showToast('请先选择学生', 'error'); return; }
+  const student = getStudent(sid);
+
+  // Gather data
+  const weakTopics = appData.knowledgeMatrix.filter(k => k.studentId === sid && k.mastery <= 3).sort((a,b) => a.mastery - b.mastery);
+  const wrongQs = appData.wrongQuestions.filter(w => w.studentId === sid);
+  const lastCard = appData.reviewCards.filter(c => c.studentId === sid).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+  const remainingIssues = lastCard?.remainingIssues || '';
+
+  // Forgetting curve intervals: review after 1, 2, 4, 7, 15 days
+  const intervals = [1, 2, 4, 7, 15];
+  const today = new Date();
+  const daysOfWeek = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+  const dailyTasks = [];
+  let taskQueue = [];
+
+  // Priority 1: Remaining issues from last review
+  if (remainingIssues) {
+    taskQueue.push({ type: '复习', content: '回顾遗留问题：' + remainingIssues, knowledgePoint: remainingIssues, source: '上节课遗留' });
+  }
+
+  // Priority 2: Weak topics (top 5)
+  weakTopics.slice(0, 5).forEach(k => {
+    taskQueue.push({ type: '复习', content: '重点复习：' + k.chapter + ' - ' + k.topic, knowledgePoint: k.chapter + '-' + k.topic, source: '薄弱知识点' });
+  });
+
+  // Priority 3: Wrong questions - apply forgetting curve
+  wrongQs.slice(0, 10).forEach((w, i) => {
+    const interval = intervals[i % intervals.length];
+    const reviewDate = new Date(today);
+    reviewDate.setDate(reviewDate.getDate() + interval);
+    taskQueue.push({ type: '练习', content: '重做错题：' + (w.question?.substring(0, 60) || ''), knowledgePoint: w.chapter || '', source: '错题本(遗忘曲线)', targetDay: Math.min(interval, 7) });
+  });
+
+  // Priority 4: Preview next topics
+  const highMastery = appData.knowledgeMatrix.filter(k => k.studentId === sid && k.mastery >= 4).slice(0, 3);
+  highMastery.forEach(k => {
+    taskQueue.push({ type: '预习', content: '预习进阶：' + k.chapter + ' - ' + k.topic + '（已掌握，可拓展）', knowledgePoint: k.chapter + '-' + k.topic, source: '进阶拓展' });
+  });
+
+  // Distribute tasks across 7 days
+  for (let d = 0; d < 7; d++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() + d);
+    const dayTasks = [];
+
+    // Assign tasks: review tasks early, practice middle, preview late
+    if (d < 3) {
+      const reviewTasks = taskQueue.filter(t => t.type === '复习' && !t.assigned);
+      if (reviewTasks.length) {
+        const t = reviewTasks[Math.floor(Math.random() * Math.min(2, reviewTasks.length))] || reviewTasks[0];
+        t.assigned = true;
+        dayTasks.push({ time: '上午', type: t.type, content: t.content, knowledgePoint: t.knowledgePoint, source: t.source });
+      }
+    }
+
+    const practiceTasks = taskQueue.filter(t => t.type === '练习' && !t.assigned && (!t.targetDay || t.targetDay <= d + 1));
+    if (practiceTasks.length && dayTasks.length < 3) {
+      const t = practiceTasks[0];
+      t.assigned = true;
+      dayTasks.push({ time: dayTasks.length === 0 ? '上午' : '下午', type: t.type, content: t.content, knowledgePoint: t.knowledgePoint, source: t.source });
+    }
+
+    if (d >= 4 && dayTasks.length < 2) {
+      const previewTasks = taskQueue.filter(t => t.type === '预习' && !t.assigned);
+      if (previewTasks.length) {
+        const t = previewTasks[0];
+        t.assigned = true;
+        dayTasks.push({ time: '下午', type: t.type, content: t.content, knowledgePoint: t.knowledgePoint, source: t.source });
+      }
+    }
+
+    // Ensure at least 1 task per day
+    if (dayTasks.length === 0 && taskQueue.some(t => !t.assigned)) {
+      const remaining = taskQueue.find(t => !t.assigned);
+      if (remaining) {
+        remaining.assigned = true;
+        dayTasks.push({ time: '下午', type: remaining.type, content: remaining.content, knowledgePoint: remaining.knowledgePoint, source: remaining.source });
+      }
+    }
+
+    dailyTasks.push({
+      day: daysOfWeek[date.getDay()],
+      date: fmtDate(date),
+      tasks: dayTasks
+    });
+  }
+
+  const plan = {
+    id: genId(),
+    studentId: sid,
+    generatedDate: todayStr(),
+    weekLabel: `${fmtDate(today)} 至 ${fmtDate(new Date(today.getTime() + 6*86400000))}`,
+    dailyTasks,
+    isAdjusted: false
+  };
+
+  appData.reviewPlans.unshift(plan);
+  saveData();
+  renderReviewPlan(plan);
+  showToast('复习计划已生成！基于遗忘曲线安排复习间隔', 'success');
+}
+
+function renderReviewPlan(plan) {
+  const container = document.getElementById('reviewPlanContainer');
+  if (!plan) return;
+
+  container.innerHTML = `
+    <div style="margin-bottom:12px;font-size:0.85rem;color:var(--text-secondary)">
+      📅 ${plan.weekLabel} | 生成日期：${plan.generatedDate}
+      ${plan.isAdjusted ? '<span class="badge badge-warning">已手动调整</span>' : ''}
+    </div>
+    ${plan.dailyTasks.map(d => `
+      <div class="plan-day">
+        <div class="plan-day-header">
+          <span>${d.day} ${d.date}</span>
+          <span style="font-size:0.75rem;color:var(--text-secondary)">${d.tasks.length} 项任务</span>
+        </div>
+        ${d.tasks.length ? d.tasks.map(t => `
+          <div class="plan-task">
+            <span class="task-type ${t.type === '复习' ? 'review' : t.type === '练习' ? 'practice' : 'preview'}">${t.type}</span>
+            <span>${escHtml(t.content)}</span>
+          </div>
+        `).join('') : '<div class="plan-task" style="color:var(--text-secondary)">休息日 🎉</div>'}
+      </div>
+    `).join('')}
+    <div style="margin-top:8px;font-size:0.75rem;color:var(--text-secondary)">
+      💡 复习间隔基于艾宾浩斯遗忘曲线安排（1/2/4/7/15 天）。可在各任务中手动调整。
+    </div>
+  `;
+}
+
+function exportReviewPlan() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const plan = appData.reviewPlans.filter(p => p.studentId === sid).sort((a,b) => new Date(b.generatedDate) - new Date(a.generatedDate))[0];
+  if (!plan) { showToast('请先生成复习计划', 'error'); return; }
+
+  const printHTML = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>复习计划</title>
+<style>body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#1e293b}
+h1{text-align:center;font-size:1.3rem}.week{text-align:center;color:#64748b;font-size:0.85rem;margin-bottom:20px}
+.day{margin-bottom:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;page-break-inside:avoid}
+.day-header{font-weight:600;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
+.task{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:0.85rem}
+.type{font-size:0.7rem;font-weight:600;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.type.review{background:#dbeafe;color:#2563eb}.type.practice{background:#fef3c7;color:#d97706}.type.preview{background:#d1fae5;color:#059669}
+@media print{@page{margin:1cm}}</style></head><body>
+<h1>📅 个性化复习计划</h1><div class="week">${plan.weekLabel}</div>
+${plan.dailyTasks.map(d => `<div class="day"><div class="day-header">${d.day} ${d.date} (${d.tasks.length}项)</div>
+${d.tasks.length ? d.tasks.map(t => `<div class="task"><span class="type ${t.type==='复习'?'review':t.type==='练习'?'practice':'preview'}">${t.type}</span><span>${escHtml(t.content)}</span></div>`).join('') : '<div class="task">休息日 🎉</div>'}</div>`).join('')}
+<div style="text-align:center;margin-top:16px;color:#94a3b8;font-size:0.8rem">💡 按 Ctrl+P 打印或另存为 PDF</div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(printHTML);
+  w.document.close();
+}
+
+// ============================================================
+//  6.4 GROWTH REPORT (成长报告)
+// ============================================================
+function generateGrowthReport() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  const container = document.getElementById('growthReportContent');
+  if (!sid) { container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>请先选择学生</p></div>'; return; }
+
+  const student = getStudent(sid);
+  const dateFrom = document.getElementById('reportDateFrom').value || '';
+  const dateTo = document.getElementById('reportDateTo').value || todayStr();
+
+  // Filter data by date range
+  const filter = (arr) => arr.filter(item => {
+    const d = item.date || item.createdAt || '';
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
+  });
+
+  const sessions = filter(appData.sessions.filter(s => s.studentId === sid));
+  const cards = filter(appData.reviewCards.filter(c => c.studentId === sid));
+  const exams = filter(appData.exams.filter(e => e.studentId === sid));
+  const wrongQs = filter(appData.wrongQuestions.filter(w => w.studentId === sid));
+  const allCards = appData.reviewCards.filter(c => c.studentId === sid).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  // Calculate stats
+  const totalSessions = sessions.length;
+  const totalMinutes = sessions.reduce((s, r) => s + (r.duration || 0), 0);
+  const totalHours = (totalMinutes / 60).toFixed(1);
+  const avgHomework = cards.length ? (cards.reduce((s,c) => s + (c.homeworkQuality||0), 0) / cards.length).toFixed(1) : '—';
+
+  // Knowledge mastery progress
+  let kpProgressHTML = '';
+  if (allCards.length >= 2) {
+    const firstCard = allCards[0];
+    const lastCard = allCards[allCards.length - 1];
+    if (firstCard.knowledgeChanges && lastCard.knowledgeChanges) {
+      const improvements = [];
+      firstCard.knowledgeChanges.forEach(fkc => {
+        const lkc = lastCard.knowledgeChanges.find(k => k.knowledgeId === fkc.knowledgeId);
+        if (lkc) {
+          improvements.push({ topic: fkc.topic, before: fkc.postMastery, after: lkc.postMastery, change: lkc.postMastery - fkc.postMastery });
+        }
+      });
+      if (improvements.length) {
+        kpProgressHTML = `
+          <div class="report-section"><h4>📊 各知识点掌握度变化</h4>
+          <table style="font-size:0.8rem"><thead><tr><th>知识点</th><th>期初</th><th>期末</th><th>变化</th></tr></thead>
+          <tbody>${improvements.map(imp => `<tr>
+            <td>${escHtml(imp.topic)}</td>
+            <td>${'★'.repeat(imp.before)}</td>
+            <td>${'★'.repeat(imp.after)}</td>
+            <td style="color:${imp.change>0?'#10b981':imp.change<0?'#ef4444':'#64748b'}">${imp.change>0?'+':''}${imp.change}</td>
+          </tr>`).join('')}</tbody></table></div>`;
+      }
+    }
+  }
+
+  // Exam trend
+  let examHTML = '';
+  if (exams.length) {
+    examHTML = `<div class="report-section"><h4>📝 考试成绩</h4><table style="font-size:0.8rem"><thead><tr><th>考试</th><th>日期</th><th>得分率</th></tr></thead>
+    <tbody>${exams.map(e => `<tr><td>${escHtml(e.name)}</td><td>${fmtDate(e.date)}</td><td>${ratePercent(e.score, e.total).toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  // Wrong question trend (by month)
+  const wrongByMonth = {};
+  wrongQs.forEach(w => {
+    const m = (w.date || '').substring(0, 7);
+    if (m) wrongByMonth[m] = (wrongByMonth[m] || 0) + 1;
+  });
+  let wrongTrendHTML = '';
+  if (Object.keys(wrongByMonth).length) {
+    const sorted = Object.entries(wrongByMonth).sort();
+    wrongTrendHTML = `<div class="report-section"><h4>❌ 错题数量趋势</h4><table style="font-size:0.8rem"><thead><tr><th>月份</th><th>错题数</th></tr></thead>
+    <tbody>${sorted.map(([m,c]) => `<tr><td>${m}</td><td>${c}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  // Weak topics current
+  const weakNow = appData.knowledgeMatrix.filter(k => k.studentId === sid && k.mastery <= 2);
+  let weakHTML = '';
+  if (weakNow.length) {
+    weakHTML = `<div class="report-section"><h4>⚠️ 当前薄弱知识点</h4>
+    ${weakNow.map(w => `<span class="badge badge-danger" style="margin:2px">${escHtml(w.chapter + ' - ' + w.topic)} ${'★'.repeat(w.mastery)}</span>`).join(' ')}</div>`;
+  } else {
+    weakHTML = `<div class="report-section"><h4>⚠️ 当前薄弱知识点</h4><span style="color:#10b981">✅ 无薄弱知识点</span></div>`;
+  }
+
+  container.innerHTML = `
+    <div style="background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:16px">
+      <h3 style="text-align:center;margin-bottom:4px">📄 ${student.name} 阶段性成长报告</h3>
+      <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem">${dateFrom || '不限'} 至 ${dateTo}</p>
+      <div class="stats-grid" style="margin-top:12px">
+        <div class="stat-card"><div class="stat-value">${totalSessions}</div><div class="stat-label">上课次数</div></div>
+        <div class="stat-card"><div class="stat-value">${totalHours}h</div><div class="stat-label">总时长</div></div>
+        <div class="stat-card"><div class="stat-value">${avgHomework}</div><div class="stat-label">平均作业质量(⭐)</div></div>
+        <div class="stat-card"><div class="stat-value">${exams.length}</div><div class="stat-label">考试次数</div></div>
+      </div>
+    </div>
+    ${kpProgressHTML}
+    ${examHTML}
+    ${wrongTrendHTML}
+    ${weakHTML}
+    <div class="report-section" style="margin-top:16px">
+      <h4>👨‍🏫 老师评语</h4>
+      <textarea class="form-control" id="reportComment" rows="3" placeholder="填写评语和下阶段学习建议..."></textarea>
+    </div>
+    <div class="report-section">
+      <h4>🎯 下阶段学习建议</h4>
+      <textarea class="form-control" id="reportSuggestion" rows="3" placeholder="填写建议..."></textarea>
+    </div>
+  `;
+}
+
+function exportGrowthReport() {
+  const sid = document.getElementById('reviewStudentFilter').value;
+  if (!sid) { showToast('请先选择学生', 'error'); return; }
+  const student = getStudent(sid);
+  const dateFrom = document.getElementById('reportDateFrom').value || '不限';
+  const dateTo = document.getElementById('reportDateTo').value || todayStr();
+  const comment = document.getElementById('reportComment')?.value || '';
+  const suggestion = document.getElementById('reportSuggestion')?.value || '';
+
+  // Get the report content
+  const reportEl = document.getElementById('growthReportContent');
+  const reportHTML = reportEl ? reportEl.innerHTML : '';
+
+  const printHTML = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>成长报告-${student.name}</title>
+<style>body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#1e293b;line-height:1.8}
+h1{text-align:center;font-size:1.3rem;margin-bottom:4px}.period{text-align:center;color:#64748b;font-size:0.85rem;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;margin:12px 0}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}th{background:#f8fafc}
+.stats-grid{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.stat-card{flex:1;min-width:80px;text-align:center;padding:12px;background:#f8fafc;border-radius:8px}
+.stat-value{font-size:1.5rem;font-weight:700;color:#4a6cf7}.stat-label{font-size:0.8rem;color:#64748b}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.75rem;margin:2px}.badge-danger{background:#fee2e2;color:#ef4444}
+.comment-box{border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin:8px 0;min-height:60px}
+@media print{@page{margin:1.5cm}}</style></head><body>
+<h1>📄 ${student.name} 阶段性成长报告</h1><div class="period">${dateFrom} 至 ${dateTo}</div>
+${reportHTML}
+<div style="margin-top:16px"><strong>👨‍🏫 老师评语：</strong><div class="comment-box">${escHtml(comment) || '(未填写)'}</div></div>
+<div style="margin-top:12px"><strong>🎯 下阶段学习建议：</strong><div class="comment-box">${escHtml(suggestion) || '(未填写)'}</div></div>
+<div style="text-align:center;margin-top:24px;color:#94a3b8;font-size:0.8rem">💡 按 Ctrl+P 打印或另存为 PDF | 生成日期：${todayStr()}</div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(printHTML);
+  w.document.close();
+}
+
+// ============================================================
+//  6.5 HABITS & REMINDERS (习惯养成)
+// ============================================================
+function renderHabitsModule() {
+  const habits = appData.reviewHabits;
+  const sid = document.getElementById('reviewStudentFilter').value;
+
+  // Check if review was done within 24 hours of last session
+  let reminderHTML = '';
+  if (sid) {
+    const lastSession = appData.sessions.filter(s => s.studentId === sid).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+    if (lastSession) {
+      const sessionDate = new Date(lastSession.date);
+      const hoursAgo = (Date.now() - sessionDate.getTime()) / 3600000;
+      const hasRecentReview = appData.reviewCards.some(c =>
+        c.studentId === sid && new Date(c.date) >= sessionDate
+      );
+      if (hoursAgo <= 24 && !hasRecentReview) {
+        reminderHTML = `<div style="padding:10px;background:var(--warning-light);border-radius:8px;margin-bottom:12px;font-size:0.85rem">
+          ⚠️ <strong>提醒：</strong>上次上课是 ${Math.round(hoursAgo)} 小时前，建议在 24 小时内完成复盘！
+          <button class="btn btn-warning btn-xs" style="margin-left:8px" onclick="startQuickReview()">⚡ 快速复盘</button>
+        </div>`;
+      } else if (hoursAgo <= 24 && hasRecentReview) {
+        reminderHTML = `<div style="padding:10px;background:var(--success-light);border-radius:8px;margin-bottom:12px;font-size:0.85rem">
+          ✅ 课后 24 小时内已完成复盘，做得好！
+        </div>`;
+      }
+    }
+  }
+
+  // Streak display
+  document.getElementById('habitStats').innerHTML = `
+    ${reminderHTML}
+    <div class="streak-display">
+      <div class="streak-item fire">
+        <div class="streak-num">🔥 ${habits.consecutiveDays || 0}</div>
+        <div class="streak-label">连续复盘天数</div>
+      </div>
+      <div class="streak-item">
+        <div class="streak-num">🏆 ${habits.longestStreak || 0}</div>
+        <div class="streak-label">最长连续记录</div>
+      </div>
+      <div class="streak-item">
+        <div class="streak-num">📋 ${habits.totalReviews || 0}</div>
+        <div class="streak-label">累计复盘次数</div>
+      </div>
+      <div class="streak-item">
+        <div class="streak-num">⚡ ${habits.quickReviewCount || appData.reviewCards.filter(c => c.isQuickReview).length}</div>
+        <div class="streak-label">快速复盘次数</div>
+      </div>
+    </div>
+    ${(habits.consecutiveDays || 0) >= 7 ? '<p style="color:#f59e0b;text-align:center;font-size:0.9rem">🎉 连续复盘 7 天以上！太厉害了！继续保持！</p>' : ''}
+    ${(habits.consecutiveDays || 0) >= 30 ? '<p style="color:#f59e0b;text-align:center;font-size:0.9rem">👑 连续复盘 30 天！你是复盘王者！</p>' : ''}
+  `;
+
+  // Update quick review count
+  habits.quickReviewCount = appData.reviewCards.filter(c => c.isQuickReview).length;
+  saveData();
+}
+
+// ============================================================
+//  7. TEST PAPER GENERATOR
+// ============================================================
+function renderTestPaperModule() {
+  populateStudentSelect('tpStudentFilter', true, '-- 全部题库 --');
+  renderQuestionBank();
+  renderWrongQuestionList();
+}
+
+function renderQuestionBank() {
+  const container = document.getElementById('questionBankList');
+  const bank = appData.questionBank;
+  if (!bank.length) {
+    container.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem">题库为空</p>';
+    return;
+  }
+  container.innerHTML = bank.map(q => `
+    <div class="card" style="margin-bottom:8px;padding:12px">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" class="tp-qb-check" value="${q.id}" style="margin-top:3px;flex-shrink:0">
+        <div>
+          <div><span class="badge badge-primary">${escHtml(q.type)}</span> <span class="badge badge-warning">${escHtml(q.chapter)}</span> <strong>${escHtml(q.subject)}</strong> · ${q.points}分</div>
+          <div style="margin-top:4px;font-weight:500">${escHtml(q.question)}</div>
+          <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:2px">答案：${escHtml(q.answer)}</div>
+        </div>
+      </label>
+    </div>
+  `).join('');
+
+  // Add question button
+  container.innerHTML += `<button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="showAddQuestionForm()">＋ 添加题目到题库</button>`;
+}
+
+function renderWrongQuestionList() {
+  const sid = document.getElementById('tpStudentFilter').value;
+  const container = document.getElementById('wrongQuestionList');
+  const title = document.getElementById('wrongQSectionTitle');
+
+  if (!sid) {
+    container.innerHTML = '';
+    title.style.display = 'none';
+    return;
+  }
+
+  title.style.display = 'block';
+  const wrong = appData.wrongQuestions.filter(w => w.studentId === sid);
+  if (!wrong.length) {
+    container.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem">该学生暂无错题记录</p>';
+    return;
+  }
+
+  container.innerHTML = wrong.map(w => `
+    <div class="card" style="margin-bottom:8px;padding:12px">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" class="tp-qb-check" value="wrong_${w.id}" data-points="${w.points || 5}">
+        <div>
+          <div><span class="badge badge-danger">错题</span> <strong>${escHtml(w.subject || '')}</strong> · ${w.points || 5}分</div>
+          <div style="margin-top:4px;font-weight:500">${escHtml(w.question)}</div>
+          <div style="color:var(--text-secondary);font-size:0.8rem;margin-top:2px">答案：${escHtml(w.answer || '')}</div>
+        </div>
+      </label>
+    </div>
+  `).join('');
+}
+
+function showAddQuestionForm() {
+  const bodyHTML = `
+    <div class="form-row">
+      <div class="form-group"><label>科目</label><input class="form-control" id="qbfSubject" placeholder="如：数学"></div>
+      <div class="form-group"><label>章节</label><input class="form-control" id="qbfChapter" placeholder="如：二次函数"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>题型</label><input class="form-control" id="qbfType" placeholder="如：解答题"></div>
+      <div class="form-group"><label>分值</label><input type="number" class="form-control" id="qbfPoints" value="10" min="1"></div>
+    </div>
+    <div class="form-group"><label>题目 *</label><textarea class="form-control" id="qbfQuestion"></textarea></div>
+    <div class="form-group"><label>答案</label><input class="form-control" id="qbfAnswer"></div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveQuestion()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal('添加题目', bodyHTML, footerHTML);
+}
+
+function saveQuestion() {
+  const subject = document.getElementById('qbfSubject').value.trim();
+  const chapter = document.getElementById('qbfChapter').value.trim();
+  const type = document.getElementById('qbfType').value.trim();
+  const points = parseInt(document.getElementById('qbfPoints').value) || 10;
+  const question = document.getElementById('qbfQuestion').value.trim();
+  const answer = document.getElementById('qbfAnswer').value.trim();
+
+  if (!question) { showToast('请输入题目', 'error'); return; }
+
+  appData.questionBank.push({ id: genId(), subject, chapter, type, question, answer, points });
+  saveData();
+  closeModal();
+  renderTestPaperModule();
+  showToast('题目已添加到题库', 'success');
+}
+
+function showAddWrongQuestionForm() {
+  const sid = document.getElementById('tpStudentFilter').value;
+  if (!sid) { showToast('请先在上方选择学生', 'error'); return; }
+  const bodyHTML = `
+    <div class="form-group"><label>科目</label><input class="form-control" id="wqfSubject" value="${escHtml(getStudent(sid)?.subject || '')}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>题型</label><input class="form-control" id="wqfType" placeholder="如：解答题"></div>
+      <div class="form-group"><label>分值</label><input type="number" class="form-control" id="wqfPoints" value="5" min="1"></div>
+    </div>
+    <div class="form-group"><label>题目 *</label><textarea class="form-control" id="wqfQuestion"></textarea></div>
+    <div class="form-group"><label>答案</label><input class="form-control" id="wqfAnswer"></div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveWrongQuestion()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal('添加错题', bodyHTML, footerHTML);
+}
+
+function saveWrongQuestion() {
+  const sid = document.getElementById('tpStudentFilter').value;
+  const subject = document.getElementById('wqfSubject').value.trim();
+  const type = document.getElementById('wqfType').value.trim();
+  const points = parseInt(document.getElementById('wqfPoints').value) || 5;
+  const question = document.getElementById('wqfQuestion').value.trim();
+  const answer = document.getElementById('wqfAnswer').value.trim();
+
+  if (!question) { showToast('请输入题目', 'error'); return; }
+
+  appData.wrongQuestions.push({ id: genId(), studentId: sid, subject, type, question, answer, points, source: '手动添加', date: todayStr() });
+  saveData();
+  closeModal();
+  renderTestPaperModule();
+  showToast('错题已添加', 'success');
+}
+
+function generateTestPaper() {
+  const title = document.getElementById('paperTitle').value.trim() || '练习卷';
+  const checks = document.querySelectorAll('.tp-qb-check:checked');
+
+  if (checks.length === 0) {
+    showToast('请至少勾选一道题目', 'error');
+    return;
+  }
+
+  let questions = [];
+  checks.forEach(cb => {
+    const val = cb.value;
+    if (val.startsWith('wrong_')) {
+      const wid = val.replace('wrong_', '');
+      const w = appData.wrongQuestions.find(x => x.id === wid);
+      if (w) {
+        questions.push({
+          number: 0,
+          type: '错题',
+          chapter: w.subject || '',
+          question: w.question,
+          answer: w.answer || '',
+          points: parseInt(cb.dataset.points) || 5
+        });
+      }
+    } else {
+      const q = appData.questionBank.find(x => x.id === val);
+      if (q) {
+        questions.push({
+          number: 0,
+          type: q.type,
+          chapter: q.chapter,
+          question: q.question,
+          answer: q.answer,
+          points: q.points
+        });
+      }
+    }
+  });
+
+  // Assign numbers and compute total
+  let totalPoints = 0;
+  questions.forEach((q, i) => {
+    q.number = i + 1;
+    totalPoints += q.points;
+  });
+
+  // Generate printable HTML
+  const printHTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>${escHtml(title)}</title>
+<style>
+  body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; max-width: 800px; margin: 0 auto; padding: 30px; color: #1e293b; }
+  .paper-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 24px; }
+  .paper-header h1 { font-size: 1.5rem; margin: 0 0 8px; }
+  .paper-header .meta { font-size: 0.9rem; color: #64748b; }
+  .question { margin-bottom: 24px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; page-break-inside: avoid; }
+  .question-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; color: #64748b; }
+  .question-text { font-size: 1rem; line-height: 1.8; }
+  .answer-space { border: 1px dashed #cbd5e1; min-height: 80px; margin-top: 8px; border-radius: 4px; }
+  .paper-footer { text-align: center; margin-top: 30px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-weight: 600; }
+  @media print {
+    body { padding: 15px; }
+    .question { break-inside: avoid; }
+    @page { margin: 1.5cm; }
+  }
+</style>
+</head>
+<body>
+  <div class="paper-header">
+    <h1>${escHtml(title)}</h1>
+    <div class="meta">姓名：__________ &nbsp;&nbsp; 日期：__________ &nbsp;&nbsp; 总分：${totalPoints} 分</div>
+  </div>
+  ${questions.map(q => `
+  <div class="question">
+    <div class="question-header">
+      <span><strong>第 ${q.number} 题</strong> · ${escHtml(q.type)} · ${escHtml(q.chapter)}</span>
+      <span><strong>${q.points} 分</strong></span>
+    </div>
+    <div class="question-text">${escHtml(q.question)}</div>
+    <div class="answer-space"></div>
+  </div>
+  `).join('')}
+  <div class="paper-footer">总分：${totalPoints} 分 | 共 ${questions.length} 题</div>
+  <div style="text-align:center;margin-top:12px;color:#94a3b8;font-size:0.8rem;no-print">
+    💡 提示：按 <strong>Ctrl+P</strong> (或 Cmd+P) 即可打印或另存为 PDF。
+  </div>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(printHTML);
+  w.document.close();
+  showToast('试卷已生成！提示：按 Ctrl+P 可另存为 PDF', 'success');
+}
+
+// ============================================================
+//  8. BILLING / SESSION MANAGEMENT
+// ============================================================
+function renderBillingModule() {
+  const sid = document.getElementById('billingStudentFilter').value;
+  populateStudentSelect('billingStudentFilter', true, '-- 全部学生 --');
+  const dateFrom = document.getElementById('billingDateFrom').value;
+  const dateTo = document.getElementById('billingDateTo').value;
+
+  let sessions = appData.sessions;
+  if (sid) sessions = sessions.filter(s => s.studentId === sid);
+  if (dateFrom) sessions = sessions.filter(s => s.date >= dateFrom);
+  if (dateTo) sessions = sessions.filter(s => s.date <= dateTo);
+  sessions.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  renderBillingStats(sessions);
+  renderSessionTable(sessions);
+  renderUnpaidAlert(sessions);
+}
+
+function renderBillingStats(sessions) {
+  const area = document.getElementById('billingStatsArea');
+  const totalReceivable = sessions.reduce((s, r) => s + (r.calculatedAmount || 0), 0);
+  const totalReceived = sessions.reduce((s, r) => s + (r.isPaid ? (r.actualAmount || r.calculatedAmount || 0) : 0), 0);
+  const totalUnpaid = sessions.reduce((s, r) => s + (r.isPaid ? 0 : (r.actualAmount || r.calculatedAmount || 0)), 0);
+  const totalCount = sessions.reduce((s, r) => s + (r.count || 1), 0);
+
+  // Per-student monthly counts
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  let perStudentHTML = '';
+  const sidFilter = document.getElementById('billingStudentFilter').value;
+  const allStudents = sidFilter ? [getStudent(sidFilter)].filter(Boolean) : appData.students;
+
+  allStudents.forEach(st => {
+    const totalForStudent = appData.sessions.filter(s => s.studentId === st.id).reduce((s, r) => s + (r.count || 1), 0);
+    const monthlyForStudent = appData.sessions.filter(s => s.studentId === st.id && s.date.startsWith(thisMonth)).reduce((s, r) => s + (r.count || 1), 0);
+    if (totalForStudent > 0) {
+      perStudentHTML += `<div class="stat-card"><div class="stat-value" style="font-size:1.2rem">${escHtml(st.name)}</div><div class="stat-label">共 ${totalForStudent} 次 · 本月 ${monthlyForStudent} 次</div></div>`;
+    }
+  });
+
+  area.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${totalCount}</div><div class="stat-label">上课次数（含多次）</div></div>
+      <div class="stat-card"><div class="stat-value">¥${totalReceivable.toFixed(2)}</div><div class="stat-label">累计应收</div></div>
+      <div class="stat-card success"><div class="stat-value">¥${totalReceived.toFixed(2)}</div><div class="stat-label">实收总额</div></div>
+      <div class="stat-card danger"><div class="stat-value">¥${totalUnpaid.toFixed(2)}</div><div class="stat-label">未收款</div></div>
+      ${perStudentHTML}
+    </div>
+  `;
+}
+
+function renderSessionTable(sessions) {
+  const tbody = document.getElementById('sessionTableBody');
+  if (!sessions.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><p>暂无上课记录</p></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sessions.map(s => {
+    const student = getStudent(s.studentId);
+    const statusHTML = s.isPaid
+      ? '<span class="badge badge-success">✓ 已收</span>'
+      : '<span class="badge badge-danger">✗ 未收</span>';
+    const count = s.count || 1;
+    return `
+    <tr>
+      <td>${escHtml(student ? student.name : '?')}</td>
+      <td>${fmtDate(s.date)}</td>
+      <td>${s.duration} 分钟</td>
+      <td>${count}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.content || '')}</td>
+      <td>¥${(s.calculatedAmount || 0).toFixed(2)}</td>
+      <td>¥${(s.actualAmount || s.calculatedAmount || 0).toFixed(2)}</td>
+      <td>${statusHTML}</td>
+      <td>
+        <input type="checkbox" class="session-paid-cb" value="${s.id}" ${s.isPaid ? 'disabled' : ''} style="margin-right:4px">
+        <button class="btn btn-outline btn-xs" onclick="showSessionForm('${s.id}')">编辑</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteSession('${s.id}')">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderUnpaidAlert(sessions) {
+  const area = document.getElementById('unpaidAlert');
+  const unpaid = sessions.filter(s => !s.isPaid);
+  if (!unpaid.length) {
+    area.innerHTML = '';
+    return;
+  }
+  const total = unpaid.reduce((s, r) => s + (r.actualAmount || r.calculatedAmount || 0), 0);
+  area.innerHTML = `<div style="padding:10px;background:var(--warning-light);border-radius:var(--radius-sm);font-size:0.85rem">
+    ⚠️ <strong>未收款提醒：</strong>共 ${unpaid.length} 条记录，合计 <strong>¥${total.toFixed(2)}</strong> 未收。
+    <button class="btn btn-success btn-xs" style="margin-left:8px" onclick="batchMarkPaid()">全部标记已收款</button>
+  </div>`;
+}
+
+function showSessionForm(editId) {
+  const s = editId ? appData.sessions.find(x => x.id === editId) : null;
+  const title = s ? '编辑上课记录' : '添加上课记录';
+  const bodyHTML = `
+    <input type="hidden" id="sfId" value="${s ? s.id : ''}">
+    <div class="form-group"><label>学生 *</label><select class="form-control" id="_sessStudent" onchange="updateSessionCalc()">${appData.students.filter(st => st.active !== false).map(st => `<option value="${st.id}" data-rate="${st.hourlyRate||0}" ${s&&s.studentId===st.id?'selected':''}>${st.name} (${st.grade} ${st.subject}) - ¥${st.hourlyRate||0}/时</option>`).join('')}</select></div>
+    <div class="form-row">
+      <div class="form-group"><label>日期 *</label><input type="date" class="form-control" id="sfDate" value="${s ? fmtDate(s.date) : todayStr()}"></div>
+      <div class="form-group"><label>时长 (分钟) *</label>
+        <select class="form-control" id="sfDurationPreset" onchange="switchDurationMode()">
+          <option value="60" ${!s || s.duration==60 ? 'selected' : ''}>60 分钟</option>
+          <option value="120" ${s && s.duration==120 ? 'selected' : ''}>120 分钟</option>
+          <option value="custom" ${s && s.duration!=60 && s.duration!=120 ? 'selected' : ''}>自定义</option>
+        </select>
+        <input type="number" class="form-control" id="sfDurationCustom" value="${(s && s.duration!=60 && s.duration!=120) ? s.duration : ''}" min="1" placeholder="输入分钟数" style="margin-top:6px;display:${(s && s.duration!=60 && s.duration!=120) ? 'block' : 'none'}" onchange="syncCustomDuration()" oninput="syncCustomDuration()">
+        <input type="hidden" id="sfDuration" value="${s ? s.duration : '60'}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>上课次数</label><input type="number" class="form-control" id="sfCount" value="${s ? (s.count || 1) : '1'}" min="1" onchange="updateSessionCalc()" oninput="updateSessionCalc()"></div>
+    </div>
+    <div class="form-group"><label>上课内容</label><textarea class="form-control" id="sfContent">${s ? escHtml(s.content || '') : ''}</textarea></div>
+    <div class="form-group"><label>课后反馈</label><textarea class="form-control" id="sfFeedback">${s ? escHtml(s.feedback || '') : ''}</textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>应收金额 (自动计算)</label><input class="form-control" id="sfCalculated" value="${s ? (s.calculatedAmount || 0).toFixed(2) : '0.00'}" readonly style="background:#f8fafc"></div>
+      <div class="form-group"><label>实收金额 (可修改)</label><input type="number" class="form-control" id="sfActual" value="${s ? (s.actualAmount || s.calculatedAmount || 0).toFixed(2) : '0.00'}" step="0.01" min="0"></div>
+    </div>
+    <div class="form-group"><label><input type="checkbox" id="sfIsPaid" ${s && s.isPaid ? 'checked' : ''}> 已收款</label></div>
+  `;
+  const footerHTML = `<button class="btn btn-primary" onclick="saveSession()">💾 保存</button><button class="btn btn-outline" onclick="closeModal()">取消</button>`;
+  showModal(title, bodyHTML, footerHTML);
+
+  // Calculate initial value
+  setTimeout(() => updateSessionCalc(), 50);
+}
+
+function switchDurationMode() {
+  const preset = document.getElementById('sfDurationPreset');
+  const custom = document.getElementById('sfDurationCustom');
+  const hidden = document.getElementById('sfDuration');
+  if (!preset || !hidden) return;
+  if (preset.value === 'custom') {
+    if (custom) custom.style.display = 'block';
+    hidden.value = custom ? custom.value : '';
+  } else {
+    if (custom) custom.style.display = 'none';
+    hidden.value = preset.value;
+  }
+  updateSessionCalc();
+}
+
+function syncCustomDuration() {
+  const custom = document.getElementById('sfDurationCustom');
+  const hidden = document.getElementById('sfDuration');
+  if (custom && hidden) hidden.value = custom.value;
+  updateSessionCalc();
+}
+
+function updateSessionCalc() {
+  const sel = document.getElementById('_sessStudent');
+  const durInput = document.getElementById('sfDuration');
+  const calcInput = document.getElementById('sfCalculated');
+  const actualInput = document.getElementById('sfActual');
+  if (!sel || !durInput || !calcInput) return;
+
+  const selectedOpt = sel.options[sel.selectedIndex];
+  const rate = parseFloat(selectedOpt ? selectedOpt.dataset.rate : 0) || 0;
+  const duration = parseFloat(durInput.value) || 0;
+  const countInput = document.getElementById('sfCount');
+  const count = countInput ? (parseInt(countInput.value) || 1) : 1;
+  const amount = (duration / 60) * rate * count;
+
+  calcInput.value = amount.toFixed(2);
+  if (actualInput && !actualInput.dataset.manuallySet) {
+    actualInput.value = amount.toFixed(2);
+  }
+}
+
+// Track manual edits to actual amount
+document.addEventListener('input', function(e) {
+  if (e.target.id === 'sfActual') {
+    e.target.dataset.manuallySet = '1';
+  }
+});
+
+function saveSession() {
+  const id = document.getElementById('sfId').value;
+  const studentId = document.getElementById('_sessStudent').value;
+  const date = document.getElementById('sfDate').value;
+  const duration = parseFloat(document.getElementById('sfDuration').value);
+  const content = document.getElementById('sfContent').value.trim();
+  const feedback = document.getElementById('sfFeedback').value.trim();
+  const calculatedAmount = parseFloat(document.getElementById('sfCalculated').value) || 0;
+  const actualAmount = parseFloat(document.getElementById('sfActual').value) || calculatedAmount;
+  const isPaid = document.getElementById('sfIsPaid').checked;
+  const count = parseInt(document.getElementById('sfCount').value) || 1;
+
+  if (!studentId || !date || isNaN(duration)) {
+    showToast('请填写学生、日期和时长', 'error');
+    return;
+  }
+
+  const obj = { id: id || genId(), studentId, date, duration, count, content, feedback, calculatedAmount, actualAmount, isPaid };
+
+  if (id) {
+    const idx = appData.sessions.findIndex(x => x.id === id);
+    if (idx >= 0) appData.sessions[idx] = obj;
+  } else {
+    appData.sessions.push(obj);
+  }
+
+  saveData();
+  closeModal();
+  renderBillingModule();
+  showToast('上课记录已保存', 'success');
+}
+
+function deleteSession(id) {
+  if (!confirm('确认删除该上课记录？')) return;
+  appData.sessions = appData.sessions.filter(s => s.id !== id);
+  saveData();
+  renderBillingModule();
+  showToast('上课记录已删除', 'info');
+}
+
+function batchMarkPaid() {
+  const checks = document.querySelectorAll('.session-paid-cb:checked');
+  if (checks.length === 0) {
+    // If no individual checkboxes checked, mark all visible unpaid
+    const unpaidVisible = document.querySelectorAll('.session-paid-cb:not([disabled])');
+    if (unpaidVisible.length === 0) {
+      showToast('没有需要标记的未收款记录', 'info');
+      return;
+    }
+    if (!confirm(`将当前显示的 ${unpaidVisible.length} 条未收款记录全部标记为已收款？`)) return;
+    unpaidVisible.forEach(cb => {
+      const s = appData.sessions.find(x => x.id === cb.value);
+      if (s) s.isPaid = true;
+    });
+  } else {
+    if (!confirm(`将选中的 ${checks.length} 条记录标记为已收款？`)) return;
+    checks.forEach(cb => {
+      const s = appData.sessions.find(x => x.id === cb.value);
+      if (s) s.isPaid = true;
+    });
+  }
+  saveData();
+  renderBillingModule();
+  showToast('收款状态已更新', 'success');
+}
+
+function exportBillingReport() {
+  const dateFrom = document.getElementById('billingDateFrom').value;
+  const dateTo = document.getElementById('billingDateTo').value;
+  let sessions = appData.sessions;
+  if (dateFrom) sessions = sessions.filter(s => s.date >= dateFrom);
+  if (dateTo) sessions = sessions.filter(s => s.date <= dateTo);
+  sessions.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (!sessions.length) {
+    showToast('当前筛选条件下没有上课记录', 'error');
+    return;
+  }
+
+  const totalReceivable = sessions.reduce((s, r) => s + (r.calculatedAmount || 0), 0);
+  const totalReceived = sessions.reduce((s, r) => s + (r.isPaid ? (r.actualAmount || r.calculatedAmount || 0) : 0), 0);
+  const totalUnpaid = sessions.reduce((s, r) => s + (r.isPaid ? 0 : (r.actualAmount || r.calculatedAmount || 0)), 0);
+
+  const printHTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>收费清单</title>
+<style>
+  body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; color: #1e293b; }
+  h1 { text-align: center; font-size: 1.4rem; margin-bottom: 4px; }
+  .period { text-align: center; color: #64748b; font-size: 0.85rem; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; }
+  th { background: #f8fafc; font-weight: 600; }
+  .text-right { text-align: right; }
+  .summary { margin-top: 16px; display: flex; gap: 20px; justify-content: flex-end; font-weight: 600; }
+  .status-paid { color: #10b981; }
+  .status-unpaid { color: #ef4444; }
+  @media print { @page { margin: 1cm; } }
+</style>
+</head>
+<body>
+  <h1>📋 家教收费清单</h1>
+  <div class="period">${dateFrom || '不限'} 至 ${dateTo || '不限'} | 生成日期：${todayStr()}</div>
+  <table>
+    <thead><tr><th>学生</th><th>日期</th><th>时长(分)</th><th>次数</th><th>内容</th><th>应收(元)</th><th>实收(元)</th><th>状态</th></tr></thead>
+    <tbody>${sessions.map(s => `
+      <tr>
+        <td>${escHtml(getStudentName(s.studentId))}</td>
+        <td>${fmtDate(s.date)}</td>
+        <td>${s.duration}</td>
+        <td>${s.count || 1}</td>
+        <td>${escHtml(s.content || '')}</td>
+        <td class="text-right">${(s.calculatedAmount || 0).toFixed(2)}</td>
+        <td class="text-right">${(s.actualAmount || s.calculatedAmount || 0).toFixed(2)}</td>
+        <td class="${s.isPaid ? 'status-paid' : 'status-unpaid'}">${s.isPaid ? '已收款' : '未收款'}</td>
+      </tr>
+    `).join('')}</tbody>
+  </table>
+  <div class="summary">
+    <span>应收合计：¥${totalReceivable.toFixed(2)}</span>
+    <span>实收合计：¥${totalReceived.toFixed(2)}</span>
+    <span style="color:#ef4444">未收合计：¥${totalUnpaid.toFixed(2)}</span>
+  </div>
+  <div style="text-align:center;margin-top:16px;color:#94a3b8;font-size:0.8rem">
+    💡 提示：按 <strong>Ctrl+P</strong> (或 Cmd+P) 即可打印或另存为 PDF。
+  </div>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(printHTML);
+  w.document.close();
+  showToast('收费清单已生成！按 Ctrl+P 可另存为 PDF', 'success');
+}
+
+// ============================================================
+//  FILE IMPORT HELPERS
+// ============================================================
+function readUploadedJSON(event, callback) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      callback(data);
+    } catch(ex) {
+      showToast('文件格式错误：无法解析 JSON', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function downloadJSONTemplate(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  1b. IMPORT STUDENTS
+// ============================================================
+function importStudents(event) {
+  readUploadedJSON(event, function(data) {
+    const list = Array.isArray(data) ? data : (data.students || []);
+    if (!list.length) { showToast('未找到学生数据', 'error'); return; }
+    let added = 0, updated = 0;
+    list.forEach(item => {
+      if (!item.name) return;
+      const existing = appData.students.find(s => s.name === item.name && s.grade === item.grade);
+      if (existing) {
+        Object.assign(existing, { subject: item.subject || existing.subject, hourlyRate: item.hourlyRate || existing.hourlyRate || 0, notes: item.notes || existing.notes });
+        updated++;
+      } else {
+        appData.students.push({ id: genId(), name: item.name, grade: item.grade || '', subject: item.subject || '', hourlyRate: item.hourlyRate || 0, notes: item.notes || '' });
+        added++;
+      }
+    });
+    saveData();
+    populateAllStudentSelects();
+    renderStudentList();
+    showToast(`学生导入完成：新增 ${added} 人，更新 ${updated} 人`, 'success');
+  });
+}
+
+// ============================================================
+//  2b. IMPORT EXAM PAPER (CROSS-MODULE INTEGRATION)
+// ============================================================
+function importExamPaper(event) {
+  const sid = document.getElementById('examStudentFilter').value;
+  readUploadedJSON(event, function(data) {
+    // Support both single exam and array of exams
+    const exams = Array.isArray(data) ? data : [data];
+    let examCount = 0, kpAdded = 0, kpUpdated = 0, qbAdded = 0, wqAdded = 0;
+
+    exams.forEach(examData => {
+      const studentId = examData.studentId || sid;
+      if (!studentId) { showToast('请先在筛选器中选择学生，或在 JSON 中指定 studentId', 'error'); return; }
+
+      // 1. Create exam record
+      let totalScore = 0;
+      if (examData.questions && examData.questions.length) {
+        totalScore = examData.questions.reduce((s, q) => s + (q.studentScore || 0), 0);
+      }
+      const examTotal = examData.totalScore || (examData.questions ? examData.questions.reduce((s, q) => s + (q.points || 0), 0) : 100);
+
+      const examId = genId();
+      appData.exams.push({
+        id: examId,
+        studentId: studentId,
+        name: examData.examName || examData.name || '导入试卷',
+        date: examData.date || todayStr(),
+        subject: examData.subject || getStudent(studentId)?.subject || '',
+        score: totalScore || examData.score || 0,
+        total: examTotal
+      });
+      examCount++;
+
+      // 2. Process each question → knowledge matrix + question bank + wrong questions
+      if (examData.questions && examData.questions.length) {
+        examData.questions.forEach(q => {
+          const chapter = q.chapter || '';
+          const topic = q.topic || q.question?.substring(0, 30) || '';
+          const subject = examData.subject || getStudent(studentId)?.subject || '';
+
+          // 2a. Add/update knowledge point in matrix
+          if (chapter && topic) {
+            const existingKP = appData.knowledgeMatrix.find(
+              k => k.studentId === studentId && k.subject === subject && k.chapter === chapter && k.topic === topic
+            );
+            // Calculate mastery based on score ratio
+            const scoreRatio = q.studentScore !== undefined && q.points ? (q.studentScore / q.points) : 0.5;
+            const newMastery = scoreRatio >= 0.9 ? 5 : scoreRatio >= 0.75 ? 4 : scoreRatio >= 0.6 ? 3 : scoreRatio >= 0.4 ? 2 : 1;
+
+            if (existingKP) {
+              // Weighted update: 60% old, 40% new
+              existingKP.mastery = Math.round(existingKP.mastery * 0.6 + newMastery * 0.4) || newMastery;
+              kpUpdated++;
+            } else {
+              appData.knowledgeMatrix.push({
+                id: genId(), studentId, subject, chapter, topic, mastery: newMastery
+              });
+              kpAdded++;
+            }
+          }
+
+          // 2b. Add question to question bank (if not duplicate)
+          if (q.question && q.question.trim().length > 2) {
+            const dup = appData.questionBank.find(qb =>
+              qb.question === q.question.trim() || (qb.chapter === chapter && qb.topic === topic && qb.type === q.type)
+            );
+            if (!dup) {
+              appData.questionBank.push({
+                id: genId(),
+                subject: subject,
+                chapter: chapter,
+                type: q.type || '解答题',
+                question: q.question.trim(),
+                answer: q.answer || '',
+                points: q.points || 5
+              });
+              qbAdded++;
+            }
+          }
+
+          // 2c. Add to wrong question book if student scored below threshold
+          if (q.studentScore !== undefined && q.points && q.studentScore < q.points * 0.75) {
+            appData.wrongQuestions.push({
+              id: genId(),
+              studentId: studentId,
+              subject: subject,
+              type: q.type || '',
+              question: q.question || '',
+              answer: q.answer || '',
+              points: q.points || 5,
+              source: examData.examName || '试卷导入',
+              date: examData.date || todayStr()
+            });
+            wqAdded++;
+          }
+        });
+      }
+    });
+
+    saveData();
+    document.getElementById('examStudentFilter').value = sid;
+    renderExamModule();
+    showToast(
+      `试卷导入完成！成绩 ${examCount} 条 | 知识点 +${kpAdded}/更新${kpUpdated} | 题库 +${qbAdded} | 错题 +${wqAdded}`,
+      'success'
+    );
+  });
+}
+
+// Download exam import template
+function downloadExamTemplate() {
+  const sid = document.getElementById('examStudentFilter').value;
+  const student = getStudent(sid);
+  downloadJSONTemplate('试卷导入模板.json', {
+    examName: '示例：期中考试',
+    date: todayStr(),
+    subject: student ? student.subject : '数学',
+    totalScore: 100,
+    questions: [
+      {
+        number: 1,
+        chapter: '一元二次方程',
+        topic: '因式分解法',
+        type: '解答题',
+        question: '解方程：x² - 5x + 6 = 0',
+        answer: 'x₁ = 2, x₂ = 3',
+        points: 10,
+        studentScore: 8
+      },
+      {
+        number: 2,
+        chapter: '三角形',
+        topic: '面积计算',
+        type: '解答题',
+        question: '已知三角形底边长 6cm，高 8cm，求其面积。',
+        answer: 'S = ½ × 6 × 8 = 24 cm²',
+        points: 8,
+        studentScore: 8
+      },
+      {
+        number: 3,
+        chapter: '一次函数',
+        topic: '函数求值',
+        type: '填空题',
+        question: '函数 y = 2x + 3，当 x = 2 时，y = ___。',
+        answer: 'y = 7',
+        points: 5,
+        studentScore: 2
+      }
+    ]
+  });
+}
+
+// ============================================================
+//  3b. IMPORT KNOWLEDGE STRUCTURE (TEXTBOOK)
+// ============================================================
+function importKnowledgeStructure(event) {
+  const sid = document.getElementById('kStudentFilter').value;
+  if (!sid) { showToast('请先在上方选择学生', 'error'); return; }
+
+  readUploadedJSON(event, function(data) {
+    const studentId = sid;
+    const subject = data.subject || getStudent(studentId)?.subject || '';
+    const chapters = data.chapters || [];
+    if (!chapters.length) { showToast('未找到章节数据（需要 chapters 数组）', 'error'); return; }
+
+    let added = 0, skipped = 0;
+    chapters.forEach(ch => {
+      const chapterName = ch.name || ch.chapter || '';
+      const topics = ch.topics || [];
+      if (Array.isArray(topics)) {
+        topics.forEach(topic => {
+          const topicName = typeof topic === 'string' ? topic : (topic.name || topic.topic || '');
+          if (!topicName) return;
+          const exists = appData.knowledgeMatrix.find(
+            k => k.studentId === studentId && k.subject === subject && k.chapter === chapterName && k.topic === topicName
+          );
+          if (!exists) {
+            appData.knowledgeMatrix.push({
+              id: genId(), studentId, subject, chapter: chapterName, topic: topicName, mastery: 3
+            });
+            added++;
+          } else {
+            skipped++;
+          }
+        });
+      } else if (ch.topics && typeof ch.topics === 'string') {
+        // Single topic string
+        const exists = appData.knowledgeMatrix.find(
+          k => k.studentId === studentId && k.subject === subject && k.chapter === chapterName && k.topic === ch.topics
+        );
+        if (!exists) {
+          appData.knowledgeMatrix.push({
+            id: genId(), studentId, subject, chapter: chapterName, topic: ch.topics, mastery: 3
+          });
+          added++;
+        } else { skipped++; }
+      }
+    });
+
+    saveData();
+    document.getElementById('kStudentFilter').value = studentId;
+    renderKnowledgeModule();
+    showToast(`知识点导入完成：新增 ${added} 个，跳过 ${skipped} 个（已存在）`, 'success');
+  });
+}
+
+// Download knowledge structure template
+function downloadKnowledgeTemplate() {
+  const sid = document.getElementById('kStudentFilter').value;
+  const student = getStudent(sid);
+  downloadJSONTemplate('知识点结构模板.json', {
+    subject: student ? student.subject : '数学',
+    chapters: [
+      {
+        name: '第一章：一元二次方程',
+        topics: ['因式分解法', '配方法', '公式法', '根的判别式', '韦达定理']
+      },
+      {
+        name: '第二章：二次函数',
+        topics: ['二次函数的图像', '顶点坐标', '对称轴', '最值问题', '与x轴交点']
+      },
+      {
+        name: '第三章：三角形',
+        topics: ['三角形面积', '勾股定理', '相似三角形', '全等三角形', '解直角三角形']
+      }
+    ]
+  });
+}
+
+// ============================================================
+//  4b. IMPORT LESSON PLANS
+// ============================================================
+function importLessonPlans(event) {
+  const sid = document.getElementById('lpStudentFilter').value;
+  readUploadedJSON(event, function(data) {
+    const list = Array.isArray(data) ? data : (data.lessonPlans || [data]);
+    if (!list.length) { showToast('未找到备课数据', 'error'); return; }
+    let added = 0;
+    list.forEach(item => {
+      const studentId = item.studentId || sid;
+      if (!studentId) return;
+      appData.lessonPlans.push({
+        id: genId(),
+        studentId,
+        title: item.title || '导入备课',
+        createdAt: item.createdAt || item.date || todayStr(),
+        subject: item.subject || getStudent(studentId)?.subject || '',
+        topics: item.topics || '',
+        examples: item.examples || '',
+        exercises: item.exercises || '',
+        materials: item.materials || []
+      });
+      added++;
+    });
+    saveData();
+    renderLessonPlanList();
+    showToast(`备课导入完成：新增 ${added} 条`, 'success');
+  });
+}
+
+// ============================================================
+//  5b. IMPORT CLASSROOM RECORDS
+// ============================================================
+function importClassroomRecords(event) {
+  const sid = document.getElementById('crStudentFilter').value;
+  readUploadedJSON(event, function(data) {
+    const list = Array.isArray(data) ? data : (data.records || [data]);
+    if (!list.length) { showToast('未找到课堂记录数据', 'error'); return; }
+    let added = 0;
+    list.forEach(item => {
+      const studentId = item.studentId || sid;
+      if (!studentId) return;
+      appData.classroomRecords.push({
+        id: genId(),
+        studentId,
+        date: item.date || todayStr(),
+        understanding: item.understanding || 3,
+        questions: item.questions || '',
+        mistakes: item.mistakes || '',
+        notes: item.notes || ''
+      });
+      added++;
+    });
+    saveData();
+    renderClassroomModule();
+    showToast(`课堂记录导入完成：新增 ${added} 条`, 'success');
+  });
+}
+
+// ============================================================
+//  7b. IMPORT QUESTION BANK
+// ============================================================
+function importQuestionBank(event) {
+  readUploadedJSON(event, function(data) {
+    const list = Array.isArray(data) ? data : (data.questions || data.questionBank || [data]);
+    if (!list.length) { showToast('未找到题目数据', 'error'); return; }
+    let added = 0, skipped = 0;
+    list.forEach(item => {
+      if (!item.question) return;
+      const dup = appData.questionBank.find(qb => qb.question === item.question.trim());
+      if (!dup) {
+        appData.questionBank.push({
+          id: genId(),
+          subject: item.subject || '',
+          chapter: item.chapter || '',
+          type: item.type || '解答题',
+          question: item.question.trim(),
+          answer: item.answer || '',
+          points: item.points || 5
+        });
+        added++;
+      } else { skipped++; }
+    });
+    saveData();
+    renderTestPaperModule();
+    showToast(`题库导入完成：新增 ${added} 题，跳过 ${skipped} 题（重复）`, 'success');
+  });
+}
+
+// ============================================================
+//  8b. IMPORT SESSIONS (BILLING)
+// ============================================================
+function importSessions(event) {
+  const sid = document.getElementById('billingStudentFilter').value;
+  readUploadedJSON(event, function(data) {
+    const list = Array.isArray(data) ? data : (data.sessions || [data]);
+    if (!list.length) { showToast('未找到课时记录数据', 'error'); return; }
+    let added = 0;
+    list.forEach(item => {
+      const studentId = sid || item.studentId;
+      if (!studentId) return;
+      const student = getStudent(studentId);
+      const rate = item.hourlyRate || student?.hourlyRate || 0;
+      const duration = item.duration || 60;
+      const count = item.count || 1;
+      const calculated = item.calculatedAmount || ((duration / 60) * rate * count);
+      appData.sessions.push({
+        id: genId(),
+        studentId,
+        date: item.date || todayStr(),
+        duration,
+        count,
+        content: item.content || '',
+        feedback: item.feedback || '',
+        calculatedAmount: Math.round(calculated * 100) / 100,
+        actualAmount: item.actualAmount || item.actualAmount === 0 ? item.actualAmount : Math.round(calculated * 100) / 100,
+        isPaid: item.isPaid || false
+      });
+      added++;
+    });
+    saveData();
+    renderBillingModule();
+    const targetName = getStudentName(sid) || '未指定学生';
+    showToast(`课时记录导入完成：新增 ${added} 条 → ${targetName}`, 'success');
+  });
+}
+
+// ============================================================
+//  LESSON SUGGESTION ENGINE (智能备课建议)
+// ============================================================
+function generateLessonSuggestion() {
+  const sid = document.getElementById('lpStudentFilter').value;
+  if (!sid) { showToast('请先在上方选择学生', 'error'); return; }
+  const student = getStudent(sid);
+  if (!student) return;
+
+  // 1. Gather data
+  const records = appData.classroomRecords
+    .filter(r => r.studentId === sid)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const lastRecord = records[0] || null;
+
+  const exams = appData.exams
+    .filter(e => e.studentId === sid)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const lastExam = exams[0] || null;
+
+  const weakTopics = appData.knowledgeMatrix
+    .filter(k => k.studentId === sid && k.mastery <= 2)
+    .sort((a, b) => a.mastery - b.mastery);
+
+  const allKnowledge = appData.knowledgeMatrix
+    .filter(k => k.studentId === sid)
+    .sort((a, b) => a.mastery - b.mastery);
+
+  const lessonPlans = appData.lessonPlans
+    .filter(l => l.studentId === sid)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const lastPlan = lessonPlans[0] || null;
+
+  const wrongQuestions = appData.wrongQuestions
+    .filter(w => w.studentId === sid)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // 2. Build suggestion
+  let suggestionParts = [];
+  let reasoningParts = [];
+
+  // --- Analysis Section ---
+  let analysisHTML = '<div style="margin-bottom:16px;padding:12px;background:#f8fafc;border-radius:8px">';
+  analysisHTML += '<strong>📋 数据概览</strong><ul style="margin:8px 0 0;padding-left:20px;font-size:0.85rem">';
+
+  if (lastRecord) {
+    analysisHTML += `<li>最近课堂：${fmtDate(lastRecord.date)}，听懂度 ${'★'.repeat(lastRecord.understanding)}${'☆'.repeat(5-lastRecord.understanding)}</li>`;
+  }
+  if (lastExam) {
+    const rate = ratePercent(lastExam.score, lastExam.total);
+    analysisHTML += `<li>最近考试：${escHtml(lastExam.name)} (${fmtDate(lastExam.date)})，得分率 ${rate.toFixed(1)}%</li>`;
+  }
+  if (lastPlan) {
+    analysisHTML += `<li>最近备课：${escHtml(lastPlan.title || '未命名')} (${fmtDate(lastPlan.createdAt)})</li>`;
+  }
+  analysisHTML += `<li>薄弱知识点：${weakTopics.length} 个 | 知识点总数：${allKnowledge.length} 个</li>`;
+  analysisHTML += `<li>错题本：${wrongQuestions.length} 题</li>`;
+  analysisHTML += '</ul></div>';
+
+  // --- Suggested Review Topics ---
+  let reviewHTML = '<div style="margin-bottom:12px"><strong>🔁 建议复习</strong><br><span style="font-size:0.8rem;color:var(--text-secondary)">（基于薄弱知识点 + 上次课堂疑问 + 最近考试低分章节）</span></div>';
+
+  const reviewCandidates = new Map(); // topic -> priority score
+
+  // Weak topics get high priority (inverse of mastery)
+  weakTopics.forEach(k => {
+    const key = `${k.chapter} - ${k.topic}`;
+    reviewCandidates.set(key, { priority: (6 - k.mastery) * 10, source: '薄弱知识点', chapter: k.chapter, topic: k.topic, subject: k.subject });
+  });
+
+  // Topics from last class questions
+  if (lastRecord && lastRecord.questions) {
+    const qs = lastRecord.questions.split(/[,，、\n;；]/).map(s => s.trim()).filter(Boolean);
+    qs.forEach(q => {
+      if (!reviewCandidates.has(q)) {
+        reviewCandidates.set(q, { priority: 25, source: '上次课堂疑问', chapter: '', topic: q, subject: student.subject });
+      } else {
+        const existing = reviewCandidates.get(q);
+        existing.priority += 15;
+        existing.source += '+课堂疑问';
+      }
+    });
+  }
+
+  // Topics from last class mistakes
+  if (lastRecord && lastRecord.mistakes) {
+    const ms = lastRecord.mistakes.split(/[,，、\n;；]/).map(s => s.trim()).filter(Boolean);
+    ms.forEach(m => {
+      const key = m;
+      if (reviewCandidates.has(key)) {
+        reviewCandidates.get(key).priority += 20;
+        reviewCandidates.get(key).source += '+错题';
+      } else {
+        reviewCandidates.set(key, { priority: 20, source: '课堂错题', chapter: '', topic: m, subject: student.subject });
+      }
+    });
+  }
+
+  // Low score chapters from last exam — find matching knowledge points
+  if (lastExam && allKnowledge.length) {
+    // Heuristic: chapters that have low mastery AND appeared in recent exams
+    allKnowledge.filter(k => k.mastery <= 3).forEach(k => {
+      const key = `${k.chapter} - ${k.topic}`;
+      if (reviewCandidates.has(key)) {
+        reviewCandidates.get(key).priority += 10;
+        reviewCandidates.get(key).source += '+考试低分';
+      }
+    });
+  }
+
+  // Sort by priority descending
+  const sortedReview = Array.from(reviewCandidates.entries())
+    .sort((a, b) => b[1].priority - a[1].priority)
+    .slice(0, 8);
+
+  let reviewListHTML = '';
+  if (sortedReview.length) {
+    reviewListHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">';
+    sortedReview.forEach(([key, info], i) => {
+      const badgeCls = i < 3 ? 'badge-danger' : i < 5 ? 'badge-warning' : 'badge-primary';
+      reviewListHTML += `<span class="badge ${badgeCls}" style="font-size:0.8rem;cursor:pointer" title="来源：${info.source} | 优先级：${info.priority}">${i+1}. ${escHtml(key)}</span>`;
+    });
+    reviewListHTML += '</div>';
+  } else {
+    reviewListHTML = '<p style="color:var(--text-secondary);font-size:0.85rem">暂无明确的复习建议。建议先完善知识点诊断和课堂记录。</p>';
+  }
+
+  // --- Suggested New Topics ---
+  let newTopicsHTML = '<div style="margin-top:16px;margin-bottom:12px"><strong>📖 建议新授</strong><br><span style="font-size:0.8rem;color:var(--text-secondary)">（基于最近备课进度，推测下一步应讲的知识点）</span></div>';
+
+  // Find chapters that haven't been covered yet or have mastery=3 (default/unassessed)
+  const coveredChapters = new Set(allKnowledge.map(k => k.chapter));
+  const unassessedOrNew = allKnowledge.filter(k => k.mastery === 3 && !weakTopics.some(w => w.chapter === k.chapter));
+
+  if (lastPlan && lastPlan.topics) {
+    newTopicsHTML += `<p style="font-size:0.8rem;color:var(--text-secondary)">上次备课内容：${escHtml(lastPlan.topics.substring(0,100))}</p>`;
+  }
+
+  if (unassessedOrNew.length) {
+    const newBatch = unassessedOrNew.slice(0, 5);
+    newTopicsHTML += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">';
+    newBatch.forEach((k, i) => {
+      newTopicsHTML += `<span class="badge badge-primary" style="font-size:0.8rem">${escHtml(k.chapter)} - ${escHtml(k.topic)}</span>`;
+    });
+    newTopicsHTML += '</div>';
+  } else if (allKnowledge.length === 0) {
+    newTopicsHTML += '<p style="color:var(--text-secondary);font-size:0.85rem">暂无知识点数据。请先在"知识点诊断"模块导入课本知识点结构。</p>';
+  } else {
+    newTopicsHTML += '<p style="color:var(--text-secondary);font-size:0.85rem">所有已录入知识点均已覆盖。建议检查薄弱知识点并优先复习。</p>';
+  }
+
+  // --- Suggested Exercises ---
+  let exercisesHTML = '<div style="margin-top:16px;margin-bottom:12px"><strong>✏️ 建议练习</strong><br><span style="font-size:0.8rem;color:var(--text-secondary)">（从错题本选取相关题目）</span></div>';
+
+  if (wrongQuestions.length > 0) {
+    const recentWrong = wrongQuestions.slice(0, 5);
+    exercisesHTML += '<ul style="margin:8px 0;padding-left:20px;font-size:0.85rem">';
+    recentWrong.forEach(w => {
+      exercisesHTML += `<li>${escHtml(w.question?.substring(0, 80))}${(w.question||'').length > 80 ? '...' : ''} <span class="badge badge-warning">${w.points}分</span></li>`;
+    });
+    exercisesHTML += '</ul>';
+    if (wrongQuestions.length > 5) {
+      exercisesHTML += `<p style="font-size:0.75rem;color:var(--text-secondary)">... 还有 ${wrongQuestions.length - 5} 道错题</p>`;
+    }
+  } else {
+    exercisesHTML += '<p style="color:var(--text-secondary);font-size:0.85rem">错题本为空。导入试卷时会自动将低分题目加入错题本。</p>';
+  }
+
+  // --- Formatted Reasoning ---
+  const reasoningParts2 = [];
+  if (weakTopics.length >= 3) {
+    reasoningParts2.push(`该学生在 ${weakTopics.length} 个薄弱知识点（≤2星），建议优先安排复习课巩固基础。`);
+  } else if (weakTopics.length > 0) {
+    reasoningParts2.push(`该学生有 ${weakTopics.length} 个薄弱知识点，可在新课中穿插复习。`);
+  }
+  if (lastExam) {
+    const rate = ratePercent(lastExam.score, lastExam.total);
+    if (rate < 60) {
+      reasoningParts2.push(`最近考试得分率仅 ${rate.toFixed(1)}%，需重点关注基础概念和常见题型训练。`);
+    } else if (rate < 80) {
+      reasoningParts2.push(`最近考试得分率 ${rate.toFixed(1)}%，有一定提升空间，建议针对性练习中等难度题目。`);
+    } else {
+      reasoningParts2.push(`最近考试得分率 ${rate.toFixed(1)}%，表现良好，可适当增加难度拓展思维。`);
+    }
+  }
+  if (lastRecord && lastRecord.understanding < 3) {
+    reasoningParts2.push('上次课堂听懂度偏低，建议本次课放慢节奏、多举例、多互动确认理解。');
+  }
+
+  // --- Build suggestion text for copy to lesson plan ---
+  const suggestedTopics = sortedReview.slice(0, 4).map(r => r[0]).join('、');
+  const suggestedNewTopics = unassessedOrNew.slice(0, 3).map(k => `${k.chapter}-${k.topic}`).join('、');
+  const suggestedExercises = wrongQuestions.slice(0, 5).map(w => w.question?.substring(0, 60)).join('；');
+
+  // --- Assemble modal ---
+  const bodyHTML = `
+    ${analysisHTML}
+    <div class="card" style="padding:14px;margin-bottom:10px">${reviewHTML}${reviewListHTML}</div>
+    <div class="card" style="padding:14px;margin-bottom:10px">${newTopicsHTML}</div>
+    <div class="card" style="padding:14px;margin-bottom:10px">${exercisesHTML}</div>
+    ${reasoningParts2.length ? `<div style="padding:10px;background:var(--primary-light);border-radius:8px;font-size:0.85rem"><strong>💡 综合分析：</strong>${reasoningParts2.join('<br>')}</div>` : ''}
+    <input type="hidden" id="sugTopics" value="${escHtml(suggestedTopics)}">
+    <input type="hidden" id="sugNewTopics" value="${escHtml(suggestedNewTopics)}">
+    <input type="hidden" id="sugExercises" value="${escHtml(suggestedExercises)}">
+  `;
+
+  const footerHTML = `
+    <button class="btn btn-outline btn-sm" onclick="downloadKnowledgeTemplate()">📋 下载知识点模板</button>
+    <button class="btn btn-outline btn-sm" onclick="downloadExamTemplate()">📋 下载试卷模板</button>
+    <button class="btn btn-primary" onclick="applySuggestionToLessonPlan()">✅ 采纳建议，创建备课</button>
+    <button class="btn btn-outline" onclick="closeModal()">关闭</button>
+  `;
+
+  showModal('💡 智能备课建议 - ' + escHtml(student.name), bodyHTML, footerHTML);
+}
+
+function applySuggestionToLessonPlan() {
+  const sid = document.getElementById('lpStudentFilter').value;
+  const student = getStudent(sid);
+  const topics = document.getElementById('sugTopics')?.value || '';
+  const newTopics = document.getElementById('sugNewTopics')?.value || '';
+  const exercises = document.getElementById('sugExercises')?.value || '';
+
+  const allTopics = [topics, newTopics].filter(Boolean).join('；');
+  const title = `${student ? student.name : ''} - 智能建议备课 (${todayStr()})`;
+
+  appData.lessonPlans.push({
+    id: genId(),
+    studentId: sid,
+    title: title,
+    createdAt: todayStr(),
+    subject: student?.subject || '',
+    topics: allTopics,
+    examples: '',
+    exercises: exercises,
+    materials: []
+  });
+
+  saveData();
+  closeModal();
+  renderLessonPlanList();
+  showToast('已根据建议创建备课！请进一步编辑补充例题和素材。', 'success');
+}
+
+// ============================================================
+//  HTML ESCAPE HELPER
+// ============================================================
+function escHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ============================================================
+//  INITIALIZATION
+// ============================================================
+function init() {
+  loadData();
+  populateAllStudentSelects();
+  renderStudentList();
+  // Bind the updateSessionCalc to be globally accessible
+  window.updateSessionCalc = updateSessionCalc;
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// Expose functions that need to be globally accessible (for onclick handlers)
+window.showStudentForm = showStudentForm;
+window.toggleStudentActive = toggleStudentActive;
+window.deleteStudent = deleteStudent;
+window.showExamForm = showExamForm;
+window.deleteExam = deleteExam;
+window.showKnowledgeForm = showKnowledgeForm;
+window.deleteKnowledge = deleteKnowledge;
+window.showLessonPlanForm = showLessonPlanForm;
+window.deleteLessonPlan = deleteLessonPlan;
+window.handleLessonImage = handleLessonImage;
+window.showClassroomForm = showClassroomForm;
+window.deleteClassroomRecord = deleteClassroomRecord;
+window.showAddQuestionForm = showAddQuestionForm;
+window.saveQuestion = saveQuestion;
+window.showAddWrongQuestionForm = showAddWrongQuestionForm;
+window.saveWrongQuestion = saveWrongQuestion;
+window.showSessionForm = showSessionForm;
+window.deleteSession = deleteSession;
+
+// Module render functions
+window.renderExamModule = renderExamModule;
+window.renderKnowledgeModule = renderKnowledgeModule;
+window.renderLessonPlanList = renderLessonPlanList;
+window.renderClassroomModule = renderClassroomModule;
+window.renderReviewModule = renderReviewModule;
+window.renderTestPaperModule = renderTestPaperModule;
+
+// Review sub-module functions
+window.switchReviewSubTab = switchReviewSubTab;
+window.refreshReviewSubTab = refreshReviewSubTab;
+window.showReviewCardForm = showReviewCardForm;
+window.saveReviewCard = saveReviewCard;
+window.deleteReviewCard = deleteReviewCard;
+window.startQuickReview = startQuickReview;
+window.saveQuickReview = saveQuickReview;
+window.renderMasteryTrendChart = renderMasteryTrendChart;
+window.generateReviewPlan = generateReviewPlan;
+window.exportReviewPlan = exportReviewPlan;
+window.generateGrowthReport = generateGrowthReport;
+window.exportGrowthReport = exportGrowthReport;
+window.renderBillingModule = renderBillingModule;
+
+// Other globals
+window.generateTestPaper = generateTestPaper;
+window.batchMarkPaid = batchMarkPaid;
+window.exportBillingReport = exportBillingReport;
+window.startSpeech = startSpeech;
+window.closeModal = closeModal;
+window.saveStudent = saveStudent;
+window.saveExam = saveExam;
+window.saveKnowledge = saveKnowledge;
+window.saveLessonPlan = saveLessonPlan;
+window.saveClassroomRecord = saveClassroomRecord;
+window.saveSession = saveSession;
+window.updateSessionCalc = updateSessionCalc;
+window.switchDurationMode = switchDurationMode;
+window.syncCustomDuration = syncCustomDuration;
+window.cycleMastery = cycleMastery;
+window.exportAllData = exportAllData;
+window.importAllData = importAllData;
+window.clearAllData = clearAllData;
+
+// Per-module imports
+window.importStudents = importStudents;
+window.importExamPaper = importExamPaper;
+window.importKnowledgeStructure = importKnowledgeStructure;
+window.importLessonPlans = importLessonPlans;
+window.importClassroomRecords = importClassroomRecords;
+window.importQuestionBank = importQuestionBank;
+window.importSessions = importSessions;
+
+// Templates & suggestions
+window.downloadExamTemplate = downloadExamTemplate;
+window.downloadKnowledgeTemplate = downloadKnowledgeTemplate;
+window.generateLessonSuggestion = generateLessonSuggestion;
+window.applySuggestionToLessonPlan = applySuggestionToLessonPlan;
+
+console.log('📚 家教助手已就绪！');
+console.log('💾 数据存储位置：浏览器 localStorage');
+console.log('📊 图表库：Chart.js');
+console.log('🎤 语音识别：Web Speech API（需 Chrome 浏览器）');
+console.log('🤖 AI 功能已预留接口（搜索 "TODO" 查看位置）');
+</script>
+
+</body>
+</html>
